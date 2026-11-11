@@ -1,0 +1,37 @@
+---
+// Botón píldora. Con `href` se renderiza como enlace real (<a>); sin él, como <button>.
+// El estilo vive en styles/ui/button.css para compartirlo con Button.jsx (islas).
+import '@/styles/ui/button.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {'primary' | 'secondary' | 'link'} [variant]
+ * @property {string} [href] si existe, se usa <a>
+ * @property {boolean} [block] ocupa todo el ancho
+ * @property {'button' | 'submit' | 'reset'} [type] sólo para <button>
+ * @property {string} [class]
+ */
+
+const {
+	variant = 'primary',
+	href,
+	block = false,
+	type = 'button',
+	class: className,
+	...rest
+} = /** @type {Props & Record<string, unknown>} */ (Astro.props);
+
+const classes = ['btn', `btn--${variant}`, { 'btn--block': block }, className];
+---
+
+{
+	href ? (
+		<a href={href} class:list={classes} {...rest}>
+			<slot />
+		</a>
+	) : (
+		<button type={type} class:list={classes} {...rest}>
+			<slot />
+		</button>
+	)
+}

@@ -1,0 +1,17 @@
+---
+// Tarjeta de vidrio. El contenido va en el slot.
+// El estilo vive en styles/ui/glass-card.css para compartirlo con GlassCard.jsx (islas).
+import '@/styles/ui/glass-card.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} [as] etiqueta HTML (por defecto div)
+ * @property {string} [class]
+ */
+
+const { as: Tag = 'div', class: className, ...rest } = /** @type {Props & Record<string, unknown>} */ (Astro.props);
+---
+
+<Tag class:list={['glass-card', className]} {...rest}>
+	<slot />
+</Tag>

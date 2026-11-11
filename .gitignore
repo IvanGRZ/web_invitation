@@ -1,1 +1,25 @@
+# sistema de diseño: privado, sólo local
 /design
+
+# build output
+dist/
+# generated types
+.astro/
+# netlify local
+.netlify/
+
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/

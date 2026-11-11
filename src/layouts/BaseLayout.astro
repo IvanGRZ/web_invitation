@@ -1,0 +1,47 @@
+---
+// Layout base: <head> común, estilos globales y tema.
+import '@/styles/fonts.css';
+import '@/styles/tokens.css';
+import '@/styles/global.css';
+
+// Precarga de lo primero que se ve (nombres y fecha de la portada), para que no cambien de fuente a media animación.
+import cormorant300 from '@/assets/fonts/CormorantGaramond-300.woff2?url';
+import cormorant400Italic from '@/assets/fonts/CormorantGaramond-400-italic.woff2?url';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} title
+ * @property {string} description texto de la vista previa (WhatsApp, buscadores)
+ * @property {'marfil' | 'noche'} [theme] tema del documento; cada sección puede fijar el suyo con data-theme
+ * @property {boolean} [noindex] true en páginas personalizadas (/i/[codigo])
+ */
+
+const { title, description, theme = 'marfil', noindex = false } = /** @type {Props} */ (Astro.props);
+
+// Color de la barra del navegador en el celular: fondo del tema (paper-deep noche / paper marfil).
+const themeColor = theme === 'noche' ? '#0f1522' : '#f7f2e8';
+---
+
+<!doctype html>
+<html lang="es" data-theme={theme}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<meta name="theme-color" content={themeColor} />
+		{noindex && <meta name="robots" content="noindex, nofollow" />}
+
+		<meta property="og:type" content="website" />
+		<meta property="og:locale" content="es_MX" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+
+		<link rel="preload" href={cormorant300} as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href={cormorant400Italic} as="font" type="font/woff2" crossorigin />
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>

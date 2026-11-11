@@ -1,0 +1,16 @@
+---
+// Invitación general. Por ahora sólo la portada; las demás secciones se agregan conforme se aprueban en Cowork.
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Portada from '@/sections/Portada.astro';
+import { evento } from '@/config/evento.js';
+
+const { el, ella } = evento.novios;
+const title = `${el.nombre} & ${ella.nombre}`;
+const description = 'Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara';
+---
+
+<BaseLayout title={title} description={description} theme="noche">
+	<main>
+		<Portada />
+	</main>
+</BaseLayout>

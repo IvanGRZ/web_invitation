@@ -2,7 +2,7 @@
 
 Invitación digital para la boda de **Ivan Guerrero Ruiz y Emma Ascencio López** (sábado 20 de febrero de 2027, Guadalajara). La web va de la mano de una invitación impresa, que lleva un QR personalizado por familia hacia esta web.
 
-Este archivo resume todo lo decidido hasta el **16 de octubre de 2026** en la conversación de diseño (Claude Cowork). Léelo completo antes de escribir código.
+Este archivo resume todo lo decidido hasta el **10 de noviembre de 2026** en la conversación de diseño (Claude Cowork) y en las sesiones de desarrollo (Claude Code). Léelo completo antes de escribir código.
 
 ---
 
@@ -139,7 +139,11 @@ Secuencia (~4 s): medallón 0.1 s → monograma se dibuja 0.4–2.6 s → letras
 
 ## 7. Stack y arquitectura
 
-**Decidido:** Astro + islas de React + Supabase, desplegado en Netlify. (Ivan conoce Next.js, no Astro: explica las decisiones de Astro cuando no sean obvias.)
+**Decidido:** Astro 7 + islas de React 19 + Supabase, desplegado en Netlify (adaptador `@astrojs/netlify`, funciones serverless, sin Edge middleware). Node 26 (`.nvmrc`). (Ivan conoce Next.js, no Astro: explica las decisiones de Astro cuando no sean obvias.)
+
+**Lenguaje: JavaScript, no TypeScript.** Archivos `.js` / `.jsx` / `.astro` con JS en el frontmatter; nunca sintaxis de TS (`interface`, anotaciones de tipo, `as`). `tsconfig.json` usa `astro/tsconfigs/base` con `checkJs: true` para que el editor avise errores con tipos inferidos (excluye `design/`). JSDoc sólo en las props de `components/ui/`. La seguridad de los datos la da **zod** en las fronteras (formularios, endpoints, variables de entorno). Alias `@/` → `src/`.
+
+**Renderizado:** `output: 'static'` (por defecto). Sólo las rutas que lo necesitan llevan `export const prerender = false`.
 
 ### Rutas
 | Ruta | Qué muestra |
@@ -149,21 +153,72 @@ Secuencia (~4 s): medallón 0.1 s → monograma se dibuja 0.4–2.6 s → letras
 
 El QR impreso de cada familia apunta a `https://<dominio>/i/<codigo>`.
 
-### Islas de React
-- `Medallion` (animación de entrada) → `client:load`
-- `Countdown` → `client:visible`
-- `ScrollCue` puede ser CSS puro (sin isla)
-- `RsvpForm` → `client:load`
-- Todo lo demás: componentes `.astro` estáticos.
+`/i/[codigo]`: valida el formato del código con zod antes de consultar; si no existe → `return Astro.rewrite('/404')`; headers `Cache-Control: private, no-store` y `X-Robots-Tag: noindex` (nunca en caché de CDN ni indexada; no usar `cacheOnDemandPages`). Página completa bajo demanda, **no** server islands (el código va en la ruta, el pase no debe parpadear y el formulario sin JS necesita página bajo demanda).
 
-Los componentes de `design/reference/bundle.js` son la referencia de comportamiento y markup; **reescríbelos** como componentes `.tsx`/`.astro` limpios (no copies el bundle tal cual).
+### Estructura
+```
+src/
+├─ actions/index.js          # entrada: operaciones que llama NUESTRA UI (RSVP)
+├─ assets/{fonts,images}/    # fuentes (copias exactas de design/fonts) y futuras fotos (<Picture>)
+├─ components/
+│  ├─ ui/                    # primitivos del sistema: Button, GlassCard, Field, Heading, Ornament, Monogram, Icon
+│  └─ patterns/              # compuestos: Medallion, Countdown, ScrollCue, CandleBackdrop, EventCard, PassBadge, RsvpForm
+├─ sections/                 # bloques de página: Portada, Detalles, Itinerario, Vestimenta, Galeria, Confirmacion
+├─ config/evento.js          # datos del evento, validados con zod al cargar
+├─ layouts/BaseLayout.astro  # <head>, meta OG/WhatsApp, theme-color, precarga de fuente, estilos globales
+├─ lib/                      # utilidades puras compartidas cliente/servidor (fechas es-MX, cuenta regresiva)
+├─ server/
+│  ├─ services/              # casos de uso (p. ej. confirmarAsistencia): no saben de HTTP ni de SQL
+│  ├─ domain/                # reglas de negocio puras + errores de dominio: sin I/O
+│  ├─ repositories/          # única capa que conoce las tablas de Supabase
+│  └─ db/supabase.js         # cliente con la service key (astro:env/server)
+├─ middleware.js             # transversal (auth de endpoints, logging); se crea cuando haga falta
+├─ pages/                    # index.astro · i/[codigo].astro · 404.astro · _catalogo.astro (sólo dev) · api/ (cuando haya consumidor)
+└─ styles/                   # fonts.css · tokens.css (copias de design/) · global.css · ui/*.css
+supabase/migrations/         # esquema versionado (sin datos)
+scripts/                     # generación de códigos/QR desde un CSV local ignorado
+netlify.toml                 # headers de seguridad
+```
+
+### Capas de UI: `ui ← patterns ← sections ← pages`
+Ninguna capa importa de una superior.
+- **`ui/`** no sabe nada de la boda: sólo props y tokens.
+- **`patterns/`** se arman con `ui/`, reciben datos por props y **nunca** importan `config/` ni `server/`.
+- **`sections/`** son las únicas que leen `config/evento.js` y pasan datos hacia abajo.
+- **`pages/`** son delgadas: obtienen datos y ordenan secciones. `sections/` evita duplicar la invitación entre `/` y `/i/[codigo]`.
+
+**Primitivos compartidos Astro/React:** un `.astro` no se puede usar dentro de una isla. El estilo de cada primitivo vive **una sola vez** en `styles/ui/*.css` (clases construidas sólo con tokens, p. ej. `.btn`, `.btn--primary`) y hay dos capas delgadas con la misma API de props (`Button.astro` / `Button.jsx`). Sólo tienen versión `.jsx` los que se usan dentro de islas (hoy `Button`, `Field`, `GlassCard`).
+
+**Convenciones:** variantes como uniones de valores (`variant: 'primary' | 'secondary' | 'link'`, contrato en `design/reference/componentes.d.ts`); pasar atributos nativos con `...rest` + `class:list`; composición con slots; `Heading` con `as="h1|h2|h3"`; sólo `var(--token)`; cada componente que anima resuelve su `prefers-reduced-motion`; PascalCase, un componente por archivo, pruebas junto al componente. Los datos pendientes se modelan como opcionales y el componente muestra "Horario por confirmar".
+
+Los componentes de `design/reference/bundle.js` son la referencia de comportamiento y markup; **reescríbelos** como componentes `.astro`/`.jsx` limpios (no copies el bundle tal cual).
+
+### Islas de React
+- `Countdown` → `client:visible` (renderiza un marcador estable en servidor para evitar *hydration mismatch*).
+- `RsvpForm` → `client:load`.
+- **`Medallion` es `.astro` con SVG inline y CSS, sin React**: trazo con `stroke-dashoffset`, anillo y secuencia son animaciones declarativas; así no se descarga React para lo primero que se ve.
+- `ScrollCue`, `CandleBackdrop` y todo lo demás: `.astro` estáticos.
+
+### Capas de lógica
+`Action / Endpoint (transporte) → Servicio (caso de uso) → Dominio (reglas puras) + Repositorio → Supabase`
+- **Action / Endpoint:** valida entrada con zod, llama al servicio, traduce errores de dominio a `ActionError` o a status HTTP. Sin lógica de negocio.
+- **Servicio:** orquesta (busca invitado, aplica reglas, guarda). Recibe `ahora` inyectable para probar la fecha límite.
+- **Dominio:** reglas puras (lugares, fecha límite, consistencia), testeables sin mocks.
+- **Repositorio:** consultas y mapeo de filas.
+- **Action** cuando la operación la dispara nuestra UI (type-safe, funciona sin JS, CSRF por `checkOrigin`). **Endpoint** en `pages/api/` cuando lo consume alguien más o se necesita control del protocolo (CSV, health check, webhook); los que exponen datos se protegen con token en el middleware.
+
+### RSVP
+- `defineAction({ accept: 'form', input: z.object(...) })`; `z` se importa de `astro/zod` (zod 4).
+- Funciona sin JS: `<form method="POST" action={actions.rsvp}>` real + `withState()` de `@astrojs/react/actions` con `useActionState()`; sin JS la página lee `Astro.getActionResult()`.
+- Los actions son endpoints públicos (`/_actions/rsvp`): el handler revalida todo.
+- Guardado idempotente (`upsert` por `guest_id`): reenviar deja la última respuesta. Por eso no hay Post/Redirect/Get con sesiones y se configura `session: false`.
 
 ### Datos (propuesta inicial, confirmar con Ivan)
 ```sql
 -- invitados: una fila por familia/invitación
 create table guests (
   id uuid primary key default gen_random_uuid(),
-  code text unique not null,      -- aleatorio, 6-8 caracteres, NO secuencial ni adivinable
+  code text unique not null,      -- aleatorio, 8 caracteres de un alfabeto de 31 sin ambiguos (sin 0/O, 1/l/I), NO secuencial ni adivinable
   family_name text not null,      -- "Familia Guerrero Ruiz"
   seats int not null check (seats > 0),
   created_at timestamptz default now()
@@ -178,12 +233,32 @@ create table rsvps (
 );
 ```
 - Lectura y escritura **sólo desde el servidor** (Astro Actions / endpoints con la service key en variables de entorno de Netlify). RLS activado sin políticas públicas: el navegador nunca habla directo con Supabase.
-- Validar en servidor: el código existe, `guests_count <= seats`, fecha límite.
+- Variables con `astro:env` (`envField` en `astro.config.mjs`): `SUPABASE_URL` (server) y `SUPABASE_SERVICE_ROLE_KEY` (server, **secret**), con `validateSecrets: true`.
+- Validar en servidor: el código existe, `guests_count <= seats`, si no asisten el conteo es 0, fecha límite (`2027-01-23T23:59:59-06:00`; México no tiene horario de verano, el offset fijo es correcto), longitud máxima del mensaje.
+- Migraciones en `supabase/migrations/` (el esquema puede ser público). **Los datos de invitados nunca entran al repo.**
 - Ivan puede ver/exportar confirmaciones desde el editor de tablas de Supabase; un `/admin` es opcional.
 
+### Seguridad
+- `security.checkOrigin` (activo por defecto) se mantiene.
+- `security.csp` (hashes) + `staticHeaders: true` en el adaptador de Netlify para que las páginas estáticas también lo reciban como header. Incompatible con `<ClientRouter />`, que no se usa.
+- `netlify.toml`: HSTS, `X-Content-Type-Options`, `Permissions-Policy` y `Referrer-Policy: strict-origin-when-cross-origin` (los enlaces a mapas desde `/i/[codigo]` no deben filtrar el código en el `Referer`).
+
 ### Fuentes y assets
-- Usa los woff2 de `design/fonts/` (o los paquetes `@fontsource/cormorant-garamond`, `@fontsource/jost`, `@fontsource/pinyon-script`, son los mismos archivos) con `font-display: swap`.
-- Copia lo que la web necesite de `design/assets/` a `public/` (p. ej. `ikat-textura-marfil.svg`). El monograma animado va como SVG inline (ver `Medallion` en `design/reference/bundle.js` y `design/reference/portada.html`).
+- **`design/` es privado y está ignorado en git** (el repo es público). Netlify construye desde el repo, así que la web nunca depende de `design/`: usa copias versionadas en `src/` y `public/`.
+- Fuentes: los 9 woff2 de `design/tokens.css` (y sus licencias OFL) copiados **tal cual** a `src/assets/fonts/`; `src/styles/fonts.css` repite sus `@font-face` cambiando sólo las rutas. Deben coincidir byte a byte con `design/fonts/` (verificado con `cmp`), por eso **no** se usan `@fontsource/*` ni la Fonts API de Astro. Precarga manual de Cormorant 300 (nombres) en `BaseLayout` con `?url`.
+- `src/styles/tokens.css`: las variables de `design/tokens.css` sin cambios. Si cambian en Cowork, se recopian.
+- Copia lo que la web necesite de `design/assets/` a `public/` (p. ej. `ikat-textura-marfil.svg`). El monograma animado va como SVG inline en `Medallion.astro` (ver `design/reference/bundle.js` y `design/reference/portada.html`).
+
+### Calidad y pruebas
+- Vitest (`getViteConfig`) para dominio y utilidades; Playwright + axe contra el preview para el flujo QR → `/i/[codigo]` → confirmación. No usar la Container API (experimental).
+- Catálogo `/_catalogo` sólo en desarrollo (404 en producción) con cada primitivo y patrón en marfil y noche.
+- Ni `astro dev` ni `astro build` revisan tipos; `astro check` requiere `@astrojs/check` + `typescript` (instalar sólo con autorización de Ivan).
+
+### Particularidades de Astro 7
+- `compressHTML` es `'jsx'` por defecto: puede quitar espacios entre elementos en línea (vigilar "Ivan" / "& Emma" y la fecha; si falla, `true`).
+- El compilador en Rust falla con HTML mal anidado en vez de corregirlo.
+- `src/fetch.ts` está reservado por el enrutamiento avanzado (opción `fetchFile`): no usar ese nombre (tampoco `fetch.js`).
+- Fuera de alcance: `<ClientRouter />`, Edge middleware, `cacheOnDemandPages`.
 
 ---
 
@@ -198,7 +273,9 @@ create table rsvps (
 | Finales de noviembre | Imprenta | Cargar invitados, horarios, fotos; pruebas con familia |
 | 7–12 diciembre 2026 | — | Envío de invitaciones y enlace |
 
-**Primer paso sugerido en esta carpeta:** crear el proyecto Astro (TypeScript estricto, integración de React y adaptador de Netlify), integrar `design/tokens.css` y las fuentes, y construir la portada de `/` idéntica a `design/reference/portada.html`, con el ajuste responsivo de la sección 6.
+**Hecho (10 nov):** proyecto Astro creado (JavaScript con `checkJs`, React y adaptador de Netlify), fuentes y tokens copiados a `src/` (ver sección 7).
+
+**Siguiente paso:** crear la base de la arquitectura (carpetas, `BaseLayout`, `global.css`, `config/evento.js` con su esquema) y después construir la portada de `/` idéntica a `design/reference/portada.html`, con el ajuste responsivo de la sección 6.
 
 ---
 
@@ -222,3 +299,6 @@ create table rsvps (
 - 2026-11-02: Invitación impresa: se elige la propuesta 1 (clásica marfil) y se rediseña el frente al estilo de papelería tradicional: nombres completos en Pinyon Script (novia primero), texto en Cormorant SC, una sola tinta, fecha y hora en palabras. Ceremonia 18:00 hrs; direcciones de iglesia y Mansión Magnolia confirmadas.
 - 2026-11-02: Invitación impresa aprobada (Clásica marfil). Frente: nombres en Pinyon Script engrosada con "&" dorado, voz en Cormorant cursiva gris (`ink-muted`) con "C" inicial caligráfica, datos en versalitas, dos filetes dorados. Reverso nuevo por familia: dedicatoria, "Familia [Apellido]", "Válido para N personas", etiqueta rigurosa, frase de niños elegida por Ivan, sólo mayores de 18, QR 2 × 2 cm con esquinas doradas, confirmar antes del 23 de enero de 2027. Detalle en `design/sistema-de-diseno.md` § Impresión. Sobre pendiente.
 - 2026-11-02: Frente impreso ajustado para respirar más: voz a 18px (después también en el reverso, para que las dos caras coincidan), fecha en palabras con interlineado más justo y filetes dorados pegados a ella. Se probó la fecha en números ("20 de Febrero de 2027 a las 6:00 PM") y se descartó: el frente va en palabras y el reverso en números.
+- 2026-11-10: Proyecto creado con Astro 7.4, React 19 y adaptador de Netlify; Node 26. `design/` queda fuera del repo (ignorado) porque el repo es público; la web usa copias en `src/`. Fuentes copiadas tal cual desde `design/fonts/` (idénticas byte a byte, verificado) en lugar de `@fontsource` o la Fonts API; tokens copiados sin cambios a `src/styles/tokens.css`.
+- 2026-11-10: Arquitectura aprobada (detalle en la sección 7): JavaScript con `checkJs` en lugar de TypeScript; capas de UI `ui ← patterns ← sections ← pages` con primitivos de estilo compartido Astro/React; capas de lógica action/endpoint → servicio → dominio + repositorio; **`Medallion` como `.astro` con CSS/SVG, sin React** (antes `client:load`); RSVP idempotente sin sesiones (`session: false`); códigos de 8 caracteres sin ambiguos; CSP + headers de seguridad; `/i/[codigo]` con `no-store` y `noindex`. Sin impacto visual: nada que llevar a Cowork.
+- 2026-11-10: **Para Cowork: valores de la portada que no existen como token.** Ivan decidió usar los valores exactos de `design/reference/portada.html` como variables locales de `src/sections/Portada.astro` (los componentes usan tokens por defecto y la portada los ajusta). Falta crear o alinear en el sistema de diseño: inicio del degradado noche `#1f2d44` (el sistema usa `--linen` `#232e44`); borde del vidrio del medallón `rgba(247,242,232,.20)` e inset de 12px (sistema: `--glass-border` .16, inset 5%); vidrio de la tarjeta de la cuenta regresiva `rgba(247,242,232,.06)`, borde `.14`, desenfoque `18px` (sistema: `--glass` .07, `--glass-border` .16, `--blur-glass` 16px); color de los nombres `#f7f2e8` (sistema: `--ink` noche `#f3ecdf`); sombra de los nombres `0 2px 24px rgba(15,21,34,.6)`; parada intermedia del resplandor `rgba(201,168,110,.12)` al 38%. También: la cuenta regresiva de la referencia apunta a las 00:00 del 20 de febrero; la web usa la hora de la ceremonia (18:00), confirmada por Ivan.

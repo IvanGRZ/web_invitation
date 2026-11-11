@@ -1,0 +1,114 @@
+---
+// Gesto de desplazamiento: línea dorada por la que cae una estela de luz hacia una flecha que rebota.
+// Es un enlace real a la siguiente sección. CSS puro, sin isla.
+// El retraso de aparición se ajusta con --cue-delay (por defecto 3.6s, el de la portada).
+
+/**
+ * @typedef {Object} Props
+ * @property {string} href ancla de la siguiente sección
+ * @property {string} [label] nombre accesible
+ * @property {string} [class]
+ */
+
+const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ (Astro.props);
+---
+
+<a href={href} aria-label={label} class:list={['scroll-cue', className]}>
+	<span class="scroll-cue__line" aria-hidden="true"><span class="scroll-cue__trail"></span></span>
+	<svg class="scroll-cue__chevron" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+		<path d="M5 9l7 7 7-7"></path>
+	</svg>
+</a>
+
+<style>
+	.scroll-cue {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-end;
+		width: 56px;
+		height: 62px;
+		color: var(--gold);
+		text-decoration: none;
+		opacity: 0;
+		animation: cue-in 1s ease var(--cue-delay, 3.6s) forwards;
+	}
+
+	.scroll-cue:focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 4px;
+		border-radius: var(--radius-pill);
+	}
+
+	.scroll-cue__line {
+		position: relative;
+		display: block;
+		width: 1px;
+		height: 32px;
+		overflow: hidden;
+		background: rgba(201, 168, 110, 0.16);
+	}
+
+	.scroll-cue__trail {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 1px;
+		height: 20px;
+		background: linear-gradient(180deg, rgba(232, 207, 156, 0) 0%, var(--gold-deep) 100%);
+		transform: translateY(-20px);
+		animation: cue-trail 2.4s cubic-bezier(0.6, 0, 0.4, 1) var(--cue-delay, 3.6s) infinite;
+	}
+
+	.scroll-cue__chevron {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.4;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		animation: cue-bob 2.4s ease-in-out var(--cue-delay, 3.6s) infinite;
+	}
+
+	@keyframes cue-in {
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes cue-trail {
+		0% {
+			transform: translateY(-20px);
+		}
+		70%,
+		100% {
+			transform: translateY(32px);
+		}
+	}
+
+	@keyframes cue-bob {
+		0%,
+		45%,
+		100% {
+			transform: translateY(0);
+		}
+		65% {
+			transform: translateY(5px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.scroll-cue {
+			animation: none;
+			opacity: 1;
+		}
+
+		.scroll-cue__trail {
+			animation: none;
+			transform: none;
+		}
+
+		.scroll-cue__chevron {
+			animation: none;
+		}
+	}
+</style>

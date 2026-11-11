@@ -1,0 +1,11 @@
+/* Tarjeta de vidrio esmerilado. Estilo único compartido por GlassCard.astro y GlassCard.jsx.
+   Por defecto usa los tokens; una sección puede ajustar --glass-card-* (p. ej. la portada usa los valores exactos de su referencia).
+   El vidrio siempre va sobre algo que se vea detrás. */
+
+.glass-card {
+  background: var(--glass-card-bg, var(--glass));
+  border: 1px solid var(--glass-card-border, var(--glass-border));
+  border-radius: var(--glass-card-radius, var(--radius-lg));
+  -webkit-backdrop-filter: blur(var(--glass-card-blur, var(--blur-glass)));
+  backdrop-filter: blur(var(--glass-card-blur, var(--blur-glass)));
+}

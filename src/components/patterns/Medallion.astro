@@ -1,0 +1,113 @@
+---
+// Medallón: óvalo de vidrio con anillo de perlas doradas que gira y el monograma I & E que se dibuja.
+// Sólo CSS + SVG (sin React): la entrada empieza en cuanto se pinta.
+// Tamaño con --medallion-width (por defecto 240px; la proporción 240×314 se mantiene).
+// Por defecto usa los tokens; una sección puede ajustar --medallion-glass-* (la portada usa los valores exactos de su referencia).
+import Monogram from '@/components/ui/Monogram.astro';
+
+/**
+ * @typedef {Object} Props
+ * @property {boolean} [animate] secuencia de entrada (por defecto sí; respeta prefers-reduced-motion)
+ * @property {string} [class]
+ */
+
+const { animate = true, class: className } = /** @type {Props} */ (Astro.props);
+---
+
+<div class:list={['medallion', { 'medallion--animate': animate }, className]}>
+	<svg class="medallion__ring" viewBox="0 0 240 314" aria-hidden="true">
+		<ellipse class="medallion__orbit" cx="120" cy="157" rx="118" ry="155"></ellipse>
+	</svg>
+	<div class="medallion__glass">
+		<Monogram draw={animate} class="medallion__monogram" />
+	</div>
+</div>
+
+<style>
+	.medallion {
+		position: relative;
+		flex: none;
+		width: var(--medallion-width, 240px);
+		aspect-ratio: 240 / 314;
+	}
+
+	.medallion__ring {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		max-width: none;
+		overflow: visible;
+		fill: none;
+	}
+
+	.medallion__orbit {
+		stroke: var(--gold);
+		stroke-width: 3;
+		stroke-linecap: round;
+		stroke-dasharray: 0 9;
+		animation: medallion-orbit 30s linear infinite;
+	}
+
+	.medallion__glass {
+		position: absolute;
+		inset: var(--medallion-glass-inset, 5%);
+		border-radius: var(--radius-oval);
+		background: var(--glass);
+		border: 1px solid var(--medallion-glass-border, var(--glass-border));
+		-webkit-backdrop-filter: blur(var(--blur-glass));
+		backdrop-filter: blur(var(--blur-glass));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* 150 de 240 px en la referencia. */
+	.medallion :global(.medallion__monogram) {
+		width: 62.5%;
+		color: var(--gold);
+	}
+
+	.medallion--animate {
+		opacity: 0;
+		transform: scale(0.92);
+		animation: medallion-in 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s forwards;
+	}
+
+	.medallion--animate .medallion__ring {
+		opacity: 0;
+		animation: medallion-fade 1.2s ease 1.6s forwards;
+	}
+
+	@keyframes medallion-in {
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+
+	@keyframes medallion-fade {
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes medallion-orbit {
+		to {
+			stroke-dashoffset: -144;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.medallion__orbit {
+			animation: none;
+		}
+
+		.medallion--animate,
+		.medallion--animate .medallion__ring {
+			animation: none;
+			opacity: 1;
+			transform: none;
+		}
+	}
+</style>

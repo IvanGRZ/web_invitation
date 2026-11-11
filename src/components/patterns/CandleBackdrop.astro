@@ -1,0 +1,142 @@
+---
+// Fondo "luz de velas" (tema noche): degradado radial, ikat que se desliza, luz que respira,
+// halo índigo y destellos flotantes. Es decorativo: se coloca detrás del contenido (position: absolute)
+// dentro de un contenedor con position: relative.
+// Por defecto usa los tokens; una sección puede ajustar --candle-* (la portada usa los valores exactos de su referencia).
+
+/**
+ * @typedef {Object} Props
+ * @property {boolean} [sparks] destellos flotantes (por defecto sí)
+ * @property {string} [class]
+ */
+
+const { sparks = true, class: className } = /** @type {Props} */ (Astro.props);
+---
+
+<div class:list={['candle', className]} aria-hidden="true">
+	<div class="candle__ikat"></div>
+	<div class="candle__glow"></div>
+	<div class="candle__stage">
+		<div class="candle__halo"></div>
+		{
+			sparks && (
+				<>
+					<span class="spark spark--1" />
+					<span class="spark spark--2" />
+					<span class="spark spark--3 spark--rose" />
+					<span class="spark spark--4" />
+					<span class="spark spark--5" />
+				</>
+			)
+		}
+	</div>
+</div>
+
+<style>
+	.candle {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		pointer-events: none;
+		background: radial-gradient(
+			120% 70% at 50% 0%,
+			var(--candle-from, var(--linen)) 0%,
+			var(--paper) 60%,
+			var(--paper-deep) 100%
+		);
+	}
+
+	.candle__ikat {
+		position: absolute;
+		inset: 0;
+		opacity: var(--opacity-ikat);
+		background-image: url('/ikat-textura-marfil.svg');
+		background-size: 96px 96px;
+		animation: candle-drift 60s linear infinite;
+	}
+
+	.candle__glow {
+		position: absolute;
+		left: 50%;
+		top: -110px;
+		width: 540px;
+		height: 540px;
+		border-radius: var(--radius-oval);
+		background: radial-gradient(circle, var(--glow) 0%, rgba(201, 168, 110, 0.12) 38%, rgba(201, 168, 110, 0) 70%);
+		transform: translateX(-50%);
+		animation: candle-breathe 7s ease-in-out infinite;
+	}
+
+	/* Halo y destellos se ubican respecto a la columna de contenido (no a toda la pantalla en escritorio). */
+	.candle__stage {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		max-width: var(--candle-stage-width, 430px);
+		margin-inline: auto;
+	}
+
+	.candle__halo {
+		position: absolute;
+		left: -130px;
+		bottom: 140px;
+		width: 360px;
+		height: 360px;
+		border-radius: var(--radius-oval);
+		background: radial-gradient(circle, var(--halo) 0%, rgba(47, 74, 120, 0) 70%);
+	}
+
+	.spark {
+		position: absolute;
+		border-radius: var(--radius-oval);
+		background: var(--candle);
+		animation: candle-float 9s ease-in-out infinite;
+	}
+
+	.spark--rose {
+		background: var(--rose);
+	}
+
+	/* Posiciones y tamaños de la portada aprobada (390×844); la altura se expresa en % para escalar. */
+	.spark--1 { left: 34px; top: 29.62%; width: 10px; height: 10px; filter: blur(2px); opacity: 0.55; }
+	.spark--2 { right: 36px; top: 17.77%; width: 16px; height: 16px; filter: blur(4px); opacity: 0.4; animation-duration: 12s; animation-delay: -3s; }
+	.spark--3 { right: 56px; top: 61.61%; width: 7px; height: 7px; filter: blur(1.5px); opacity: 0.6; animation-duration: 10s; animation-delay: -6s; }
+	.spark--4 { left: 62px; top: 10.9%; width: 6px; height: 6px; filter: blur(1px); opacity: 0.5; animation-duration: 14s; animation-delay: -2s; }
+	.spark--5 { left: 30px; top: 72.27%; width: 12px; height: 12px; filter: blur(3px); opacity: 0.35; animation-duration: 11s; animation-delay: -8s; }
+
+	@keyframes candle-drift {
+		to {
+			background-position: 192px 96px;
+		}
+	}
+
+	@keyframes candle-breathe {
+		0%,
+		100% {
+			opacity: 0.75;
+			transform: translateX(-50%) scale(1);
+		}
+		50% {
+			opacity: 1;
+			transform: translateX(-50%) scale(1.08);
+		}
+	}
+
+	@keyframes candle-float {
+		0%,
+		100% {
+			transform: translate(0, 0);
+		}
+		50% {
+			transform: translate(8px, -22px);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.candle__ikat,
+		.candle__glow,
+		.spark {
+			animation: none;
+		}
+	}
+</style>

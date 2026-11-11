@@ -1,0 +1,222 @@
+---
+// Portada aprobada (propuesta D · Velas + medallón). Referencia exacta: design/reference/portada.html (390×844).
+// Ocupa toda la pantalla en tema noche y cierra sólo con el gesto de desplazamiento.
+//
+// Responsivo: en lugar de las posiciones absolutas de la referencia, una rejilla de una columna cuyos
+// espacios son fracciones proporcionales a los de la referencia. A 390×844 los elementos caen donde
+// en la referencia; en pantallas más cortas los espacios se encogen en proporción y el medallón y los
+// nombres escalan con la altura, para que en un iPhone SE el botón quede visible sin scroll.
+//
+// Valores exactos: donde la referencia no coincide con un token, se usan sus valores como variables
+// locales (--portada-*, --glass-card-*, --medallion-glass-*, --candle-*). Anotado en CLAUDE.md § 10.
+import { evento } from '@/config/evento.js';
+import { fechaLarga } from '@/lib/fechas.js';
+import CandleBackdrop from '@/components/patterns/CandleBackdrop.astro';
+import Medallion from '@/components/patterns/Medallion.astro';
+import Countdown from '@/components/patterns/Countdown.jsx';
+import ScrollCue from '@/components/patterns/ScrollCue.astro';
+import GlassCard from '@/components/ui/GlassCard.astro';
+import Button from '@/components/ui/Button.astro';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} [ctaHref] destino del botón "Confirmar asistencia"
+ * @property {string} [nextHref] ancla de la siguiente sección (gesto de desplazamiento)
+ */
+
+const { ctaHref = '#confirmar', nextHref = '#detalles' } = /** @type {Props} */ (Astro.props);
+const { el, ella } = evento.novios;
+const fecha = fechaLarga(evento.ceremonia.inicio, { mayuscula: true });
+---
+
+<section class="portada" data-theme="noche" aria-label={`${el.nombre} y ${ella.nombre}`}>
+	<CandleBackdrop />
+
+	<div class="portada__escena">
+		<Medallion class="portada__medallon" />
+
+		<h1 class="portada__nombres">
+			<span class="portada__el">{el.nombre}</span>
+			<span class="portada__ella"><span class="portada__y">&amp;</span>{ella.nombre}</span>
+		</h1>
+
+		<p class="portada__fecha portada__entra">{fecha}</p>
+
+		<div class="portada__cuenta portada__entra">
+			<GlassCard class="portada__tarjeta">
+				<Countdown client:visible target={evento.ceremonia.inicio} />
+			</GlassCard>
+		</div>
+
+		<div class="portada__cta portada__entra">
+			<Button href={ctaHref} block>Confirmar asistencia</Button>
+		</div>
+
+		<ScrollCue href={nextHref} class="portada__gesto" />
+	</div>
+</section>
+
+<style>
+	.portada {
+		/* Valores exactos de la referencia que no coinciden con un token (ver CLAUDE.md § 10). */
+		--candle-from: #1f2d44;
+		--medallion-glass-inset: 3.822% 5%; /* 12px sobre 240×314 */
+		--medallion-glass-border: rgba(247, 242, 232, 0.2);
+		--glass-card-bg: rgba(247, 242, 232, 0.06);
+		--glass-card-border: rgba(247, 242, 232, 0.14);
+		--glass-card-blur: 18px;
+		--portada-nombres: #f7f2e8;
+		--portada-nombres-sombra: 0 2px 24px rgba(15, 21, 34, 0.6);
+
+		/* Medallón 240×314 a 844px de alto; escala con la altura (CLAUDE.md § 6). */
+		--medallion-width: min(240px, 29svh);
+
+		position: relative;
+		isolation: isolate;
+		display: grid;
+		align-items: center;
+		min-height: 100svh;
+		overflow: hidden;
+		color: var(--ink);
+	}
+
+	.portada__escena {
+		position: relative;
+		z-index: 1;
+		display: grid;
+		justify-items: stretch;
+		/* Espacios en fracciones proporcionales a la referencia: 68 · 30 · 24.56 · 20 · 24.1 · 18 px a 844px.
+		   El mínimo de cada espacio evita que los elementos se toquen en pantallas muy cortas. */
+		grid-template-rows:
+			minmax(16px, 68fr)
+			auto
+			minmax(8px, 30fr)
+			auto
+			minmax(8px, 24.56fr)
+			auto
+			minmax(8px, 20fr)
+			auto
+			minmax(8px, 24.1fr)
+			auto
+			minmax(8px, 18fr)
+			auto
+			12px;
+		width: 100%;
+		max-width: 430px;
+		/* En escritorio la escena no crece sin límite: se centra como columna. */
+		height: min(100svh, 1000px);
+		min-height: min(100svh, 1000px);
+		margin-inline: auto;
+	}
+
+	.portada__escena > :global(.portada__medallon) {
+		grid-row: 2;
+		justify-self: center;
+	}
+
+	.portada__nombres {
+		grid-row: 4;
+		display: flex;
+		flex-direction: column;
+		margin: 0 40px;
+		/* 66px a 844px de alto; se reduce en pantallas cortas. */
+		font-size: clamp(44px, 7.82svh, 66px);
+		font-weight: 300;
+		line-height: 0.92;
+		letter-spacing: 0.005em;
+		color: var(--portada-nombres);
+		text-shadow: var(--portada-nombres-sombra);
+	}
+
+	.portada__el {
+		align-self: flex-start;
+		opacity: 0;
+		transform: translateX(-28px);
+		animation: portada-desliza 1.3s cubic-bezier(0.2, 0.7, 0.2, 1) 2.2s forwards;
+	}
+
+	.portada__ella {
+		align-self: flex-end;
+		display: flex;
+		align-items: baseline;
+		gap: 0.1212em; /* 8px a 66px */
+		opacity: 0;
+		transform: translateX(28px);
+		animation: portada-desliza 1.3s cubic-bezier(0.2, 0.7, 0.2, 1) 2.45s forwards;
+	}
+
+	.portada__y {
+		font-size: 0.6364em; /* 42px a 66px */
+		font-style: italic;
+		font-weight: 400;
+		color: var(--gold);
+	}
+
+	.portada__fecha {
+		grid-row: 6;
+		font-size: 20px;
+		line-height: 26px;
+		font-style: italic;
+		font-weight: 400;
+		text-align: center;
+		color: var(--ink);
+		animation-delay: 2.8s;
+	}
+
+	.portada__cuenta {
+		grid-row: 8;
+		margin: 0 44px;
+		animation-delay: 3.05s;
+	}
+
+	.portada__cuenta :global(.portada__tarjeta) {
+		display: flex;
+		justify-content: center;
+		padding: 12px 14px 10px;
+	}
+
+	.portada__cta {
+		grid-row: 10;
+		margin: 0 44px;
+		animation-delay: 3.3s;
+	}
+
+	.portada__escena > :global(.portada__gesto) {
+		grid-row: 12;
+		justify-self: center;
+	}
+
+	/* Entrada: aparece subiendo 16px. La animación va en un contenedor para no pisar el hover del botón. */
+	.portada__entra {
+		opacity: 0;
+		transform: translateY(16px);
+		animation-name: portada-sube;
+		animation-duration: 1s;
+		animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+		animation-fill-mode: forwards;
+	}
+
+	@keyframes portada-desliza {
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	@keyframes portada-sube {
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.portada__el,
+		.portada__ella,
+		.portada__entra {
+			animation: none;
+			opacity: 1;
+			transform: none;
+		}
+	}
+</style>

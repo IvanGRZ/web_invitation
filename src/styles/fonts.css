@@ -1,0 +1,11 @@
+/* Copia de design/tokens.css (@font-face). No editar aquí: los cambios se aprueban en Cowork,
+   se copian a design/ y de ahí se vuelven a copiar a este archivo y a src/assets/fonts/. */
+@font-face { font-family: "Cormorant Garamond"; src: url("../assets/fonts/CormorantGaramond-300.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("../assets/fonts/CormorantGaramond-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("../assets/fonts/CormorantGaramond-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("../assets/fonts/CormorantGaramond-600.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("../assets/fonts/CormorantGaramond-400-italic.woff2") format("woff2"); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: "Cormorant Garamond"; src: url("../assets/fonts/CormorantGaramond-500-italic.woff2") format("woff2"); font-weight: 500; font-style: italic; font-display: swap; }
+@font-face { font-family: "Jost"; src: url("../assets/fonts/Jost-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Jost"; src: url("../assets/fonts/Jost-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Pinyon Script"; src: url("../assets/fonts/PinyonScript-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
