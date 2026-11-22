@@ -1,11 +1,11 @@
 ---
 // Gesto de desplazamiento: línea dorada por la que cae una estela de luz hacia una flecha que rebota.
-// Es un enlace real a la siguiente sección. CSS puro, sin isla.
-// El retraso de aparición se ajusta con --cue-delay (por defecto 3.6s, el de la portada).
+// Es un enlace real a la siguiente pantalla. CSS puro, sin isla.
+// Medidas en unidades de diseño (--u); el retraso de aparición se ajusta con --cue-delay (por defecto 3.6s).
 
 /**
  * @typedef {Object} Props
- * @property {string} href ancla de la siguiente sección
+ * @property {string} href ancla de la siguiente pantalla
  * @property {string} [label] nombre accesible
  * @property {string} [class]
  */
@@ -15,19 +15,21 @@ const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ 
 
 <a href={href} aria-label={label} class:list={['scroll-cue', className]}>
 	<span class="scroll-cue__line" aria-hidden="true"><span class="scroll-cue__trail"></span></span>
-	<svg class="scroll-cue__chevron" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">
+	<svg class="scroll-cue__chevron" viewBox="0 0 24 24" aria-hidden="true">
 		<path d="M5 9l7 7 7-7"></path>
 	</svg>
 </a>
 
 <style>
 	.scroll-cue {
+		--uu: var(--u, 1px);
+
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: flex-end;
-		width: 56px;
-		height: 62px;
+		width: max(44px, calc(56 * var(--uu)));
+		height: max(44px, calc(62 * var(--uu)));
 		color: var(--gold);
 		text-decoration: none;
 		opacity: 0;
@@ -44,7 +46,7 @@ const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ 
 		position: relative;
 		display: block;
 		width: 1px;
-		height: 32px;
+		height: calc(32 * var(--uu));
 		overflow: hidden;
 		background: rgba(201, 168, 110, 0.16);
 	}
@@ -54,13 +56,15 @@ const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ 
 		left: 0;
 		top: 0;
 		width: 1px;
-		height: 20px;
+		height: calc(20 * var(--uu));
 		background: linear-gradient(180deg, rgba(232, 207, 156, 0) 0%, var(--gold-deep) 100%);
-		transform: translateY(-20px);
+		transform: translateY(calc(-20 * var(--uu)));
 		animation: cue-trail 2.4s cubic-bezier(0.6, 0, 0.4, 1) var(--cue-delay, 3.6s) infinite;
 	}
 
 	.scroll-cue__chevron {
+		width: calc(30 * var(--uu));
+		height: calc(30 * var(--uu));
 		fill: none;
 		stroke: currentColor;
 		stroke-width: 1.4;
@@ -77,11 +81,11 @@ const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ 
 
 	@keyframes cue-trail {
 		0% {
-			transform: translateY(-20px);
+			transform: translateY(calc(-20 * var(--uu)));
 		}
 		70%,
 		100% {
-			transform: translateY(32px);
+			transform: translateY(calc(32 * var(--uu)));
 		}
 	}
 
@@ -92,7 +96,7 @@ const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ 
 			transform: translateY(0);
 		}
 		65% {
-			transform: translateY(5px);
+			transform: translateY(calc(5 * var(--uu)));
 		}
 	}
 

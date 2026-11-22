@@ -1,0 +1,55 @@
+---
+// Muestras de la galería de la boda con los datos del lienzo ("Familia García", 128 recuerdos), SÓLO en desarrollo
+// (en el build no se genera ninguna). Sirven para revisar cada estado mientras no exista el backend y para la
+// comparación con el lienzo (tools/qa/casos.mjs):
+//   /prueba/<estado>/galeria-de-la-boda
+//     subiendo · sinsenal · rechazo · fallo · listo   los tableros de "mensajes al subir"
+//     reposo · vacia · general (sin código)           sin subida en curso
+//     antes · cerrada                                  el rollo
+//     simulada · simulada-falla                        la subida de verdad con un servidor de mentiras
+//                                                      (simulada-falla: la primera foto falla al guardar)
+import Recorrido from '@/layouts/Recorrido.astro';
+import { galeriaBoda, tituloDe } from '@/screens/index.js';
+import { muestra } from '@/screens/galeria-boda/galeria-boda.data.js';
+
+export function getStaticPaths() {
+	if (import.meta.env.PROD) return [];
+	const { familia, total, mias, miasListo, nuevasListo, fallida, rechazadas, totalCerrada } = muestra;
+	const base = { estado: 'abierta', familia, total, mias };
+	/** @param {Record<string, unknown>} lote */
+	const conLote = (lote, extra = {}) => ({
+		...base,
+		inicio: { lote: { n: 3, hechas: 0, pendientes: 0, avance: 0, rechazadas: [], fallidas: [], ...lote }, ...extra },
+	});
+	/** @type {Record<string, Record<string, unknown>>} */
+	const muestras = {
+		subiendo: conLote({ hechas: 1, pendientes: 2, avance: 0.66 }),
+		sinsenal: conLote({ hechas: 1, pendientes: 2, avance: 0.32 }, { enLinea: false }),
+		rechazo: { ...conLote({ hechas: 1, avance: 1, rechazadas }), total: total + 1 },
+		fallo: { ...conLote({ hechas: 2, avance: 1, fallidas: [fallida] }), total: total + 2 },
+		listo: { ...conLote({ hechas: 3, avance: 1, desde: 0.66 }, { nuevas: nuevasListo }), total: total + 3, mias: miasListo },
+		reposo: base,
+		vacia: { ...base, total: 0, mias: [] },
+		general: { ...base, familia: null },
+		antes: { estado: 'antes' },
+		cerrada: { estado: 'cerrada', total: totalCerrada },
+		simulada: { ...base, simular: { demoraMs: 900 } },
+		'simulada-falla': { ...base, simular: { demoraMs: 600, fallar: 1 } },
+	};
+	return Object.entries(muestras).map(([estado, props]) => ({ params: { estado }, props }));
+}
+
+const base = `/prueba/${Astro.params.estado}`;
+const { Componente } = galeriaBoda;
+---
+
+<Recorrido title={tituloDe(galeriaBoda)} description="Muestra de desarrollo" base={base} inicial={galeriaBoda.slug} noindex>
+	<Componente
+		id={galeriaBoda.id}
+		slug={galeriaBoda.slug}
+		titulo={tituloDe(galeriaBoda)}
+		volver="/galeria#galeria"
+		historias={`${base}/galeria-de-la-boda/historias`}
+		{...Astro.props}
+	/>
+</Recorrido>

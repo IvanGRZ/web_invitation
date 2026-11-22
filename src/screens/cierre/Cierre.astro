@@ -1,0 +1,167 @@
+---
+// Pantalla 7 · Cierre (El sello). docs/pantallas.md § 6.6.
+// Tableros del lienzo: CierreSello (celular 390×844) y CierreEscritorio (computadora 1440×900).
+// Estilos en cierre.css; datos de diseño en cierre.data.js; la fecha límite sale de config/evento.js.
+//
+// Final del recorrido, de noche. Un sobre virtual con el sello de lacre I & E: el sello es el botón (no hay
+// otro "Confirmar asistencia" en esta pantalla). Es un enlace real a la confirmación: sin JS o con
+// movimiento reducido navega directo; con JS (cierre.js) primero se rompe el sello, el sobre se desvanece,
+// aparece el frente impreso y una luz marfil llena la pantalla; al terminar (~2.9 s) navega.
+import Screen from '@/components/patterns/Screen.astro';
+import { evento } from '@/config/evento.js';
+import { fechaLarga } from '@/lib/fechas.js';
+import { sobres, sellos, monograma, estrellas } from './cierre.data.js';
+import frente from './assets/invitacion-frente.jpg';
+import './cierre.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {string} [siguiente] no aplica: es la última pantalla del recorrido
+ * @property {string} confirmar dirección de la pantalla de confirmación (lo da la página)
+ */
+
+const { id, slug, titulo, confirmar } = /** @type {Props} */ (Astro.props);
+
+const fechaLimite = fechaLarga(evento.fechaLimiteRsvp, { diaSemana: false });
+const nombres = `${evento.novios.el.nombre} y ${evento.novios.ella.nombre}`;
+
+/** @param {number[]} estrella */
+const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}s;--t:${t}s`;
+---
+
+<Screen id={id} slug={slug} titulo={titulo} theme="noche" class="cierre" aria-labelledby="cierre-titulo">
+	<Fragment slot="fondo">
+		<div class="cierre__cielo" aria-hidden="true"></div>
+		<div class="cierre__luz cierre__luz--indigo" aria-hidden="true"></div>
+		<div class="cierre__luz cierre__luz--oro" aria-hidden="true"></div>
+		<div class="cierre__luz cierre__luz--sobre" aria-hidden="true"></div>
+		{
+			Object.entries(estrellas).map(([tamano, lista]) => (
+				<div class={`cierre__estrellas cierre__estrellas--${tamano}`} aria-hidden="true">
+					{lista.map((e) => (
+						<span class="cierre__estrella" style={estiloEstrella(e)} />
+					))}
+				</div>
+			))
+		}
+	</Fragment>
+
+	<!-- Degradados de la cera y el monograma, compartidos por los dos tamaños del sello. -->
+	<svg class="cierre__defs" width="0" height="0" aria-hidden="true">
+		<defs>
+			<radialGradient id="cierre-cera" cx="38%" cy="34%" r="72%">
+				<stop offset="0" stop-color="#d8ba80"></stop>
+				<stop offset=".5" stop-color="#a98547"></stop>
+				<stop offset="1" stop-color="#6b4f24"></stop>
+			</radialGradient>
+			<radialGradient id="cierre-prensa" cx="55%" cy="60%" r="65%">
+				<stop offset="0" stop-color="#a38043"></stop>
+				<stop offset="1" stop-color="#8a6a36"></stop>
+			</radialGradient>
+			<g id="cierre-monograma">
+				{monograma.map((d) => <path d={d} />)}
+			</g>
+		</defs>
+	</svg>
+
+	<div class="cierre__escena" data-cierre>
+		<div class="cierre__desvanece">
+			<p class="cierre__antetitulo">Tu invitación</p>
+			<h2 id="cierre-titulo" class="cierre__titulo">Todo listo, solo faltas tú</h2>
+			<p class="cierre__instruccion">Rompe el sello y confirma tu asistencia</p>
+		</div>
+
+		<div class="cierre__sobre">
+			<div class="cierre__reverso">
+				{
+					Object.entries(sobres).map(([tamano, s]) => (
+						<svg
+							class={`cierre__variante cierre__variante--${tamano}`}
+							viewBox={`0 0 ${s.ancho} ${s.alto}`}
+							aria-hidden="true"
+						>
+							<rect width={s.ancho} height={s.alto} rx="4" fill="#23466f" />
+							{s.laterales.map((d) => (
+								<path d={d} fill="#2a5080" />
+							))}
+							<path d={s.inferior} fill="#2e5686" class="cierre__solapa-inferior" />
+							<path d={s.superior} fill="#335d8f" class="cierre__solapa-superior" />
+						</svg>
+					))
+				}
+			</div>
+
+			<a class="cierre__sello" href={confirmar} aria-label="Romper el sello y confirmar asistencia" data-cierre-sello>
+				<span class="cierre__halo" aria-hidden="true"></span>
+				{
+					Object.entries(sellos).map(([tamano, s]) => {
+						const c = s.tamano / 2;
+						const { x, y, escala } = s.monograma;
+						return (
+							<svg
+								class={`cierre__variante cierre__variante--${tamano}`}
+								viewBox={`0 0 ${s.tamano} ${s.tamano}`}
+								aria-hidden="true"
+							>
+								<path d={s.cera} fill="url(#cierre-cera)" />
+								<circle cx={c} cy={c} r={s.radio} fill="url(#cierre-prensa)" />
+								<circle
+									cx={c}
+									cy={c}
+									r={s.radio}
+									fill="none"
+									stroke="#e6cc94"
+									stroke-opacity=".45"
+									stroke-width="1"
+									transform="translate(.7 .7)"
+								/>
+								<circle cx={c} cy={c} r={s.radio} fill="none" stroke="#4f3816" stroke-width="1.2" />
+								<circle
+									cx={c}
+									cy={c}
+									r={s.punteado}
+									fill="none"
+									stroke="#4f3816"
+									stroke-opacity=".75"
+									stroke-width=".8"
+									stroke-dasharray="0 3"
+									stroke-linecap="round"
+								/>
+								<use
+									href="#cierre-monograma"
+									transform={`translate(${x + 0.6} ${y + 0.6}) scale(${escala})`}
+									fill="#e6cc94"
+									fill-opacity=".5"
+								/>
+								<use href="#cierre-monograma" transform={`translate(${x} ${y}) scale(${escala})`} fill="#4f3816" />
+							</svg>
+						);
+					})
+				}
+			</a>
+		</div>
+
+		<div class="cierre__desvanece">
+			<p class="cierre__toca" aria-hidden="true">Toca el sello</p>
+			<p class="cierre__limite">Confirma antes del {fechaLimite}</p>
+		</div>
+
+		<img
+			class="cierre__frente"
+			src={frente.src}
+			width={frente.width}
+			height={frente.height}
+			alt={`Invitación de ${nombres}`}
+			loading="lazy"
+			decoding="async"
+		/>
+		<div class="cierre__marfil" aria-hidden="true"></div>
+	</div>
+</Screen>
+
+<script>
+	import './cierre.js';
+</script>

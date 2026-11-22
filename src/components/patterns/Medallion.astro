@@ -55,16 +55,16 @@ const { animate = true, class: className } = /** @type {Props} */ (Astro.props);
 		border-radius: var(--radius-oval);
 		background: var(--glass);
 		border: 1px solid var(--medallion-glass-border, var(--glass-border));
-		-webkit-backdrop-filter: blur(var(--blur-glass));
-		backdrop-filter: blur(var(--blur-glass));
+		-webkit-backdrop-filter: blur(var(--medallion-glass-blur, var(--blur-glass)));
+		backdrop-filter: blur(var(--medallion-glass-blur, var(--blur-glass)));
 		display: flex;
 		align-items: center;
 		justify-content: center;
 	}
 
-	/* 150 de 240 px en la referencia. */
+	/* 150 px en un medallón de 240 (relativo al medallón, no al vidrio, que es más angosto por su margen). */
 	.medallion :global(.medallion__monogram) {
-		width: 62.5%;
+		width: calc(var(--medallion-width, 240px) * 0.625);
 		color: var(--gold);
 	}
 

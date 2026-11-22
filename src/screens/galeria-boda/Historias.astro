@@ -1,0 +1,25 @@
+---
+// Pantalla aparte · Galería de la boda · las historias de la noche. docs/pantallas.md § 6.9 › Ver las fotos.
+// Tableros del lienzo: GaleriaBoda-carrusel-c (celular 390×844) y GaleriaBoda-historias-escritorio (1440×900).
+// Comportamiento en Historias.jsx (isla); estilos en historias.css.
+// Sin JS se ve la primera foto con su pie, completa y sin recortar, y "Volver".
+import Screen from '@/components/patterns/Screen.astro';
+import HistoriasIsla from './Historias.jsx';
+import './historias.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {import('./galeria-boda.data.js').Foto[]} fotos por orden de llegada (al menos una)
+ * @property {number} total
+ * @property {string} volver dirección de subir fotos
+ */
+
+const { id, slug, titulo, fotos, total, volver } = /** @type {Props} */ (Astro.props);
+---
+
+<Screen id={id} slug={slug} titulo={titulo} theme="noche" class="historias-pantalla">
+	<HistoriasIsla client:load fotos={fotos} total={total} volver={volver} />
+</Screen>

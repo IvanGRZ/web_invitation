@@ -1,0 +1,22 @@
+---
+// Las historias de la noche (`/galeria-de-la-boda/historias`). Bajo demanda (SSR): las fotos llegan durante la
+// noche. Antes de que abra la galería, o si todavía no hay fotos, lleva a subir (§ 6.9: "si alguien abre las
+// historias sin fotos, llévalo a subir").
+import Recorrido from '@/layouts/Recorrido.astro';
+import { galeriaBodaDe, historias, tituloDe } from '@/screens/index.js';
+import { estadoGaleria, fotosCompartidas } from '@/screens/galeria-boda/galeria-boda.js';
+
+export const prerender = false;
+
+const base = '';
+const subir = galeriaBodaDe(base);
+const { total, fotos } = await fotosCompartidas();
+if (estadoGaleria() === 'antes' || !fotos.length) return Astro.redirect(subir, 303);
+
+const { Componente } = historias;
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<Recorrido title={tituloDe(historias)} description="Ivan y Emma · las fotos de la noche" base={base} inicial={historias.slug}>
+	<Componente id={historias.id} slug={historias.slug} titulo={tituloDe(historias)} fotos={fotos} total={total} volver={subir} />
+</Recorrido>

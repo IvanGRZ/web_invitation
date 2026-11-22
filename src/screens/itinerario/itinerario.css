@@ -1,0 +1,464 @@
+/* Pantalla 4 · Itinerario de la fiesta. Tableros del lienzo: ItinerarioD (390×670) e ItinerarioEscritorio (1440×900).
+ *
+ * Composición de celular por defecto; de computadora cuando el recorrido mide ≥ 1024 px de ancho y es
+ * horizontal. Todo en coordenadas del tablero con la unidad de diseño --u (styles/screen.css).
+ * El tablero de celular mide 670 de alto y va centrado: arriba sigue el marfil y abajo la noche (#0f1522),
+ * así que el código de vestimenta empieza en esa misma noche.
+ *   Fondo (.screen__fondo, a sangre): papel, dos luces, las dos capas del cielo (atardecer y noche, que sólo
+ *   suben de opacidad: no hay orillas que se muevan) y las estrellas, en coordenadas del tablero centrado.
+ *   Escenario (el tablero): la carta del programa.
+ *
+ * Valores del lienzo que no son tokens: --it-*. */
+
+.itinerario {
+  --bw: 390;
+  --bh: 670;
+
+  /* Altura del tablero (px del tablero) dentro de la capa a sangre: y = 50% + (N − bh/2)·u */
+  --it-y0: calc(50% - var(--bh) / 2 * var(--u));
+
+  --it-carta: #faf7f0;
+  --it-carta-sombra: rgba(15, 21, 34, 0.22);
+  --it-papel-medio: #f5ebe0;
+  --it-papel-pie: #efe0d6;
+  --it-luz-oro: rgba(226, 207, 166, 0.55);
+  --it-luz-rosa: rgba(217, 179, 178, 0.42);
+  --it-cielo-1: #edd6cd;
+  --it-cielo-2: #c9b0b6;
+  --it-cielo-3: #8d8aa6;
+  --it-cielo-4: #4f6190;
+  --it-cielo-5: #2f4a78;
+  --it-cielo-6: #1f2d44;
+  --it-cielo-7: #0f1522;
+  --it-estrella: #fbefd2;
+  --it-estrella-halo: rgba(246, 227, 180, 0.6);
+
+  /* Paradas del cielo en px del tablero (celular). */
+  --it-c0: 240;
+  --it-c1: 300;
+  --it-c2: 348;
+  --it-c3: 385;
+  --it-c4: 430;
+  --it-c5: 474;
+  --it-c6: 563;
+  --it-c7: 670;
+  --it-a3: 411; /* el atardecer llega al lila aquí */
+}
+
+/* ─── Fondo ───────────────────────────────────────────────────────── */
+
+.itinerario__papel,
+.itinerario__cielo,
+.itinerario__estrellas {
+  position: absolute;
+  inset: 0;
+}
+
+.itinerario__papel {
+  background: linear-gradient(
+    180deg,
+    var(--paper) var(--it-y0),
+    var(--it-papel-medio) calc(var(--it-y0) + var(--bh) * 0.55 * var(--u)),
+    var(--it-papel-pie) calc(var(--it-y0) + var(--bh) * var(--u))
+  );
+}
+
+.itinerario__luz {
+  position: absolute;
+  left: calc(50% + (var(--x) - var(--bw) / 2) * var(--u));
+  top: calc(50% + (var(--y) - var(--bh) / 2) * var(--u));
+  width: calc(var(--s) * var(--u));
+  height: calc(var(--s) * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--c) 0%, transparent 70%);
+}
+
+.itinerario__luz--oro {
+  --x: 190; /* right −120, 320 de ancho */
+  --y: 60;
+  --s: 320;
+  --c: var(--it-luz-oro);
+}
+
+.itinerario__luz--rosa {
+  --x: -150;
+  --y: 250;
+  --s: 360;
+  --c: var(--it-luz-rosa);
+}
+
+/* Parada del cielo N (px del tablero) como posición dentro de la capa a sangre. */
+.itinerario__cielo--atardecer {
+  background: linear-gradient(
+    180deg,
+    transparent calc(var(--it-y0) + var(--it-c0) * var(--u)),
+    color-mix(in srgb, var(--it-cielo-1) 90%, transparent) calc(var(--it-y0) + var(--it-c1) * var(--u)),
+    color-mix(in srgb, var(--it-cielo-2) 90%, transparent) calc(var(--it-y0) + var(--it-c2) * var(--u)),
+    color-mix(in srgb, var(--it-cielo-3) 90%, transparent) calc(var(--it-y0) + var(--it-a3) * var(--u))
+  );
+  animation: it-cae 2.61s ease-in-out 1.8s both;
+}
+
+.itinerario__cielo--noche {
+  background: linear-gradient(
+    180deg,
+    transparent calc(var(--it-y0) + var(--it-c0) * var(--u)),
+    var(--it-cielo-1) calc(var(--it-y0) + var(--it-c1) * var(--u)),
+    var(--it-cielo-2) calc(var(--it-y0) + var(--it-c2) * var(--u)),
+    var(--it-cielo-3) calc(var(--it-y0) + var(--it-c3) * var(--u)),
+    var(--it-cielo-4) calc(var(--it-y0) + var(--it-c4) * var(--u)),
+    var(--it-cielo-5) calc(var(--it-y0) + var(--it-c5) * var(--u)),
+    var(--it-cielo-6) calc(var(--it-y0) + var(--it-c6) * var(--u)),
+    var(--it-cielo-7) calc(var(--it-y0) + var(--it-c7) * var(--u))
+  );
+  animation: it-cae 3.56s ease-in-out 2.99s both;
+}
+
+.itinerario__estrellas--computadora {
+  display: none;
+}
+
+.itinerario__estrella {
+  position: absolute;
+  left: calc(50% + (var(--x) - var(--bw) / 2) * var(--u));
+  top: calc(50% + (var(--y) - var(--bh) / 2) * var(--u));
+  width: calc(var(--s) * var(--u));
+  height: calc(var(--s) * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--it-estrella) 0%, var(--it-estrella-halo) 40%, transparent 72%);
+  opacity: 0;
+  animation: it-titila var(--t) ease-in-out var(--d) infinite;
+}
+
+/* ─── Carta del programa ──────────────────────────────────────────── */
+
+.itinerario__carta {
+  position: absolute;
+  left: calc(18 * var(--u));
+  right: calc(18 * var(--u));
+  top: calc(56 * var(--u));
+  padding-bottom: calc(22 * var(--u));
+  border-radius: calc(24 * var(--u)); /* radius-lg en px del tablero */
+  background: var(--it-carta);
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  box-shadow: 0 calc(18 * var(--u)) calc(44 * var(--u)) var(--it-carta-sombra);
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  animation: it-sube 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 0.1s forwards;
+}
+
+.itinerario__marco {
+  position: absolute;
+  inset: calc(10 * var(--u));
+  border-radius: calc(16 * var(--u));
+  border: 1px solid color-mix(in srgb, var(--gold) 38%, transparent);
+  pointer-events: none;
+}
+
+.itinerario__contenido {
+  position: relative;
+  padding: calc(30 * var(--u)) calc(26 * var(--u)) 0;
+  text-align: center;
+}
+
+.itinerario__voluta {
+  --ornament-width: 120;
+  --ornament-height: calc(10 * var(--u));
+
+  margin: 0 auto calc(16 * var(--u));
+  opacity: 0;
+  animation: it-suave 1.2s ease 0.1s forwards;
+}
+
+.itinerario__voluta--pie {
+  --ornament-width: 72;
+  --ornament-height: calc(6 * var(--u));
+
+  margin: calc(32 * var(--u)) auto 0;
+  animation-delay: 6.3s;
+}
+
+.itinerario__antetitulo {
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(11 * var(--u)));
+  line-height: normal; /* como el lienzo */
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--gold-deep);
+  opacity: 0;
+  animation: it-suave 1.2s ease 0.35s forwards;
+}
+
+/* "la fiesta" se escribe de izquierda a derecha. */
+.itinerario__titulo {
+  margin-top: calc(8 * var(--u));
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: calc(54 * var(--u));
+  line-height: calc(64 * var(--u));
+  color: var(--gold-deep);
+  clip-path: inset(0 100% 0 0);
+  animation: it-escribe 1.8s cubic-bezier(0.45, 0, 0.2, 1) 0.7s forwards;
+}
+
+.itinerario__programa {
+  margin: calc(16 * var(--u)) 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+/* Cada renglón cae en su momento (--r, desde el .astro); su icono se dibuja 0.1 s después y la línea
+ * de puntos se traza 0.25 s después. */
+.itinerario__renglon {
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  padding: calc(14 * var(--u)) 0;
+  opacity: 0;
+  animation: it-suave 1.2s ease var(--r) forwards;
+}
+
+.itinerario__icono {
+  flex: none;
+  width: calc(24 * var(--u));
+  display: flex;
+  justify-content: center;
+}
+
+.itinerario__icono svg {
+  width: calc(22 * var(--u));
+  height: calc(22 * var(--u));
+  max-width: none;
+  overflow: visible;
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.itinerario__trazo {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: it-dibuja 2.4s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--r) + 0.1s) forwards;
+}
+
+.itinerario__momento,
+.itinerario__hora {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: max(17px, calc(20 * var(--u)));
+  line-height: calc(26 * var(--u));
+  white-space: nowrap;
+}
+
+.itinerario__momento {
+  color: var(--ink);
+}
+
+.itinerario__hora {
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--gold-deep);
+}
+
+.itinerario__puntos {
+  flex: 1;
+  min-width: calc(14 * var(--u));
+  height: 0;
+  border-bottom: calc(1.5 * var(--u)) dotted color-mix(in srgb, var(--gold) 55%, transparent);
+  transform-origin: left;
+  transform: translateY(calc(5 * var(--u))) scaleX(0); /* como el lienzo: al trazarse queda en el centro */
+  animation: it-traza 1s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--r) + 0.25s) forwards;
+}
+
+/* ─── Computadora (tablero 1440×900) ──────────────────────────────── */
+
+@container recorrido (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .itinerario {
+    --bw: 1440;
+    --bh: 900;
+
+    --it-luz-oro: rgba(226, 207, 166, 0.5);
+    --it-luz-rosa: rgba(217, 179, 178, 0.4);
+
+    --it-c0: 340;
+    --it-c1: 400;
+    --it-c2: 465;
+    --it-c3: 515;
+    --it-c4: 575;
+    --it-c5: 635;
+    --it-c6: 755;
+    --it-c7: 900;
+    --it-a3: 550;
+  }
+
+  .itinerario__luz--oro {
+    --x: 960; /* right −160, 640 de ancho */
+    --y: -60;
+    --s: 640;
+  }
+
+  .itinerario__luz--rosa {
+    --x: -200;
+    --y: 120;
+    --s: 620;
+  }
+
+  .itinerario__estrellas--celular {
+    display: none;
+  }
+
+  .itinerario__estrellas--computadora {
+    display: block;
+  }
+
+  .itinerario__carta {
+    left: calc(440 * var(--u)); /* 560 centrados en 1440 */
+    right: auto;
+    width: calc(560 * var(--u));
+    top: calc(92 * var(--u));
+    padding-bottom: calc(30 * var(--u));
+  }
+
+  .itinerario__marco {
+    inset: calc(12 * var(--u));
+  }
+
+  .itinerario__contenido {
+    padding: calc(40 * var(--u)) calc(56 * var(--u)) 0;
+  }
+
+  .itinerario__voluta {
+    --ornament-width: 150;
+    --ornament-height: calc(12 * var(--u));
+  }
+
+  .itinerario__voluta--pie {
+    --ornament-width: 90;
+    --ornament-height: calc(8 * var(--u));
+  }
+
+  .itinerario__antetitulo {
+    font-size: max(10px, calc(12 * var(--u)));
+  }
+
+  .itinerario__titulo {
+    font-size: calc(66 * var(--u));
+    line-height: calc(78 * var(--u));
+  }
+
+  .itinerario__renglon {
+    gap: calc(16 * var(--u));
+    padding: calc(15 * var(--u)) 0;
+  }
+
+  .itinerario__icono {
+    width: calc(28 * var(--u));
+  }
+
+  .itinerario__icono svg {
+    width: calc(26 * var(--u));
+    height: calc(26 * var(--u));
+  }
+
+  .itinerario__momento,
+  .itinerario__hora {
+    font-size: max(17px, calc(24 * var(--u)));
+    line-height: calc(30 * var(--u));
+  }
+}
+
+/* ─── Movimiento (la pantalla entra una vez, al llegar a la vista) ──── */
+
+@keyframes it-suave {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes it-sube {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes it-escribe {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes it-dibuja {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes it-traza {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Las capas del cielo sólo suben de opacidad. */
+@keyframes it-cae {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes it-titila {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  45%,
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Movimiento reducido: el estado final, sin animar (ya es de noche; las estrellas quietas). */
+@media (prefers-reduced-motion: reduce) {
+  .itinerario__cielo,
+  .itinerario__carta,
+  .itinerario__voluta,
+  .itinerario__antetitulo,
+  .itinerario__titulo,
+  .itinerario__renglon,
+  .itinerario__trazo,
+  .itinerario__puntos,
+  .itinerario__estrella {
+    animation: none !important;
+  }
+
+  .itinerario__carta,
+  .itinerario__voluta,
+  .itinerario__antetitulo,
+  .itinerario__renglon {
+    opacity: 1;
+  }
+
+  .itinerario__carta,
+  .itinerario__puntos {
+    transform: none;
+  }
+
+  .itinerario__titulo {
+    clip-path: none;
+  }
+
+  .itinerario__trazo {
+    stroke-dashoffset: 0;
+  }
+
+  .itinerario__estrella {
+    opacity: 0.8;
+  }
+}

@@ -1,0 +1,253 @@
+---
+// Pantalla 3 · Ceremonia y recepción (propuesta C · ola con corte y brújula). docs/pantallas.md § 6.2.
+// Tableros del lienzo: CeremoniaC (celular 390×1056) y CeremoniaEscritorio (computadora 1440×900).
+// El tablero de celular es más alto que una pantalla: se escala completo para que quepa (Ivan, 21 nov).
+// Estilos en ceremonia.css; datos de diseño en ceremonia.data.js.
+//
+// "Cómo llegar": <button aria-expanded> que muestra u oculta su barra de Maps · Waze · Uber (sólo una
+// abierta a la vez; Escape la cierra). Sin JS las dos barras quedan a la vista y los enlaces funcionan.
+import Screen from '@/components/patterns/Screen.astro';
+import Button from '@/components/ui/Button.astro';
+import GlassCard from '@/components/ui/GlassCard.astro';
+import { evento } from '@/config/evento.js';
+import { fechaLarga, hora } from '@/lib/fechas.js';
+import { iconos, nombresEnLineas, olas } from './ceremonia.data.js';
+import './ceremonia.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {string} [siguiente] enlace a la siguiente pantalla (el tablero no lleva gesto de desplazamiento)
+ */
+
+const { id, slug, titulo } = /** @type {Props} */ (Astro.props);
+const { ceremonia, recepcion } = evento;
+
+// "Sábado 20 de febrero" · "de 2027"
+const [dia, anio] = fechaLarga(ceremonia.inicio, { mayuscula: true }).split(/ (?=de \d{4}$)/);
+
+/** @param {string} destino */
+const rutas = (destino) => {
+	const q = encodeURIComponent(destino);
+	return [
+		{ nombre: 'Maps', href: `https://www.google.com/maps/search/?api=1&query=${q}` },
+		{ nombre: 'Waze', href: `https://waze.com/ul?q=${q}&navigate=yes` },
+		{ nombre: 'Uber', href: `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff%5Bformatted_address%5D=${q}` },
+	];
+};
+
+const paradas = [
+	{
+		clave: 'ceremonia',
+		etiqueta: 'Ceremonia',
+		inicio: ceremonia.inicio,
+		nombre: ceremonia.nombre,
+		lineas: nombresEnLineas.ceremonia,
+		icono: iconos.templo,
+		rutas: rutas(ceremonia.destino),
+	},
+	{
+		clave: 'recepcion',
+		etiqueta: 'Recepción',
+		inicio: recepcion.inicio,
+		nombre: recepcion.nombre,
+		lineas: nombresEnLineas.recepcion,
+		icono: iconos.mansion,
+		rutas: rutas(recepcion.destino),
+	},
+];
+
+for (const parada of paradas) {
+	if (parada.lineas.join(' ') !== parada.nombre) {
+		throw new Error(`ceremonia.data.js: los cortes de "${parada.nombre}" no coinciden con config/evento.js`);
+	}
+}
+---
+
+<Screen id={id} slug={slug} titulo={titulo} theme="marfil" class="ceremonia" aria-labelledby="ceremonia-titulo">
+	<Fragment slot="fondo">
+		<div class="ceremonia__mancha ceremonia__mancha--oro" aria-hidden="true"></div>
+		<div class="ceremonia__mancha ceremonia__mancha--indigo" aria-hidden="true"></div>
+		<div class="ceremonia__mancha ceremonia__mancha--rosa" aria-hidden="true"></div>
+	</Fragment>
+
+	<div class="ceremonia__encabezado">
+		<h2 id="ceremonia-titulo" class="ceremonia__antetitulo">Ceremonia y recepción</h2>
+		<p class="ceremonia__fecha">{dia}</p>
+		<p class="ceremonia__anio">{anio}</p>
+	</div>
+
+	{
+		Object.entries(olas).map(([tamano, ola]) => (
+			<svg
+				class={`ceremonia__ola ceremonia__ola--${tamano}`}
+				viewBox={`0 0 ${ola.ancho} ${ola.alto}`}
+				aria-hidden="true"
+			>
+				<defs>
+					<radialGradient id={`ceremonia-solida-${tamano}`}>
+						<stop offset="0" stop-color="#000" />
+						<stop offset="0.7" stop-color="#000" />
+						<stop offset="1" stop-color="#fff" />
+					</radialGradient>
+					<radialGradient id={`ceremonia-punteada-${tamano}`}>
+						<stop offset="0" stop-color="#000" />
+						<stop offset="0.55" stop-color="#000" />
+						<stop offset="0.68" stop-color="#777" />
+						<stop offset="0.8" stop-color="#fff" />
+						<stop offset="0.9" stop-color="#fff" />
+						<stop offset="1" stop-color="#000" />
+					</radialGradient>
+					<filter id={`ceremonia-suave-${tamano}`} x="-5%" y="-5%" width="110%" height="110%">
+						<feGaussianBlur stdDeviation="0.35" />
+					</filter>
+					<mask id={`ceremonia-revela-${tamano}`} maskUnits="userSpaceOnUse" x="0" y="0" width={ola.ancho} height={ola.alto}>
+						<path
+							class="ceremonia__revela"
+							pathLength="1"
+							d={ola.curva}
+							stroke="#fff"
+							stroke-width={ola.revelado}
+							stroke-linecap="round"
+						/>
+					</mask>
+					<mask id={`ceremonia-mascara-solida-${tamano}`} maskUnits="userSpaceOnUse" x="0" y="0" width={ola.ancho} height={ola.alto}>
+						<rect width={ola.ancho} height={ola.alto} fill="#fff" />
+						<ellipse {...ola.corte} fill={`url(#ceremonia-solida-${tamano})`} />
+					</mask>
+					<mask id={`ceremonia-mascara-punteada-${tamano}`} maskUnits="userSpaceOnUse" x="0" y="0" width={ola.ancho} height={ola.alto}>
+						<ellipse {...ola.corte} fill={`url(#ceremonia-punteada-${tamano})`} />
+					</mask>
+				</defs>
+				<g mask={`url(#ceremonia-revela-${tamano})`}>
+					<path
+						class="ceremonia__linea ceremonia__linea--solida"
+						d={ola.curva}
+						mask={`url(#ceremonia-mascara-solida-${tamano})`}
+						stroke-width={ola.trazo}
+					/>
+					<path
+						class="ceremonia__linea ceremonia__linea--punteada"
+						d={ola.curva}
+						mask={`url(#ceremonia-mascara-punteada-${tamano})`}
+						stroke-width={ola.trazo}
+						stroke-dasharray="3.5 5"
+						filter={`url(#ceremonia-suave-${tamano})`}
+					/>
+				</g>
+			</svg>
+		))
+	}
+
+	<p class="ceremonia__continuacion">y a continuación</p>
+
+	{
+		paradas.map((parada) => (
+			<>
+				<GlassCard class={`ceremonia__medallon ceremonia__medallon--${parada.clave}`}>
+					<svg class="ceremonia__icono" viewBox={parada.icono.viewBox} aria-hidden="true">
+						{parada.icono.trazos.map((d) => (
+							<path class="ceremonia__trazo" pathLength="1" d={d} />
+						))}
+					</svg>
+				</GlassCard>
+
+				<div class={`ceremonia__parada ceremonia__parada--${parada.clave}`}>
+					<p class="ceremonia__hora">
+						{parada.etiqueta} · {parada.inicio ? hora(parada.inicio) : 'Horario por confirmar'}
+					</p>
+					<h3 class="ceremonia__lugar">
+						{parada.lineas.map((linea, i) => (
+							<>
+								{i > 0 && <br />}
+								{linea}
+							</>
+						))}
+					</h3>
+
+					<div class="ceremonia__llegar" data-llegar>
+						<button
+							type="button"
+							class="ceremonia__boton"
+							aria-expanded="true"
+							aria-controls={`ceremonia-rutas-${parada.clave}`}
+							data-llegar-boton
+						>
+							<svg class="ceremonia__brujula" viewBox="0 0 24 24" aria-hidden="true">
+								<circle class="ceremonia__anillo" pathLength="1" cx="12" cy="12" r="10.5" />
+								<path class="ceremonia__marcas" d="M12 2.9v1.6M12 19.5v1.6M2.9 12h1.6M19.5 12h1.6" />
+								<g class="ceremonia__aguja" data-aguja>
+									<path class="ceremonia__punta" d="M12 4.4L14.6 12H9.4z" />
+									<path class="ceremonia__cola" d="M12 19.6L14.6 12H9.4z" />
+									<circle class="ceremonia__eje" cx="12" cy="12" r="1.3" />
+								</g>
+							</svg>
+							<span class="ceremonia__como">
+								Cómo llegar
+								<span class="ceremonia__subrayado" aria-hidden="true" />
+							</span>
+							<span class="sr-only">a {parada.nombre}</span>
+						</button>
+
+						<div class="ceremonia__rutas" id={`ceremonia-rutas-${parada.clave}`}>
+							{parada.rutas.map((ruta, i) => (
+								<>
+									{i > 0 && <span class="ceremonia__separador" aria-hidden="true" />}
+									<a class="ceremonia__ruta" href={ruta.href} target="_blank" rel="noopener">
+										{ruta.nombre}
+										<span class="sr-only">: cómo llegar a {parada.nombre}</span>
+									</a>
+								</>
+							))}
+						</div>
+					</div>
+				</div>
+			</>
+		))
+	}
+
+	<div class="ceremonia__calendario">
+		<Button href="/calendario.ics" block class="ceremonia__boton-calendario">
+			<svg class="ceremonia__icono-calendario" viewBox="0 0 24 24" aria-hidden="true">
+				<rect x="4" y="5.5" width="16" height="14.5" rx="3" />
+				<path d="M8 3.5v4M16 3.5v4M4 10h16M12 13v4M10 15h4" />
+			</svg>
+			Agregar al calendario
+		</Button>
+	</div>
+</Screen>
+
+<script>
+	// "Cómo llegar": abre una barra a la vez. La aguja de la brújula gira hacia la barra abierta y regresa
+	// al cerrarla (clases is-open / is-back, como en el tablero).
+	const grupos = [...document.querySelectorAll('[data-llegar]')];
+	const botonDe = (/** @type {Element} */ g) => /** @type {HTMLButtonElement} */ (g.querySelector('[data-llegar-boton]'));
+	const agujaDe = (/** @type {Element} */ g) => /** @type {SVGGElement} */ (g.querySelector('[data-aguja]'));
+
+	/** @param {Element} grupo @param {boolean} abierto @param {boolean} [regreso] */
+	function poner(grupo, abierto, regreso = false) {
+		botonDe(grupo).setAttribute('aria-expanded', String(abierto));
+		grupo.toggleAttribute('data-abierto', abierto);
+		const aguja = agujaDe(grupo);
+		aguja.classList.toggle('is-open', abierto);
+		aguja.classList.toggle('is-back', !abierto && regreso);
+	}
+
+	for (const grupo of grupos) {
+		poner(grupo, false);
+		botonDe(grupo).addEventListener('click', () => {
+			const abrir = !grupo.hasAttribute('data-abierto');
+			for (const otro of grupos) {
+				if (otro !== grupo && otro.hasAttribute('data-abierto')) poner(otro, false, true);
+			}
+			poner(grupo, abrir, !abrir);
+		});
+		grupo.addEventListener('keydown', (evento) => {
+			if (/** @type {KeyboardEvent} */ (evento).key !== 'Escape' || !grupo.hasAttribute('data-abierto')) return;
+			poner(grupo, false, true);
+			botonDe(grupo).focus();
+		});
+	}
+</script>

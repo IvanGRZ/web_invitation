@@ -1,0 +1,42 @@
+---
+// Recorrido de la invitación: pantallas completas que se detienen una por una al hacer scroll.
+// - Cada pantalla (components/patterns/Screen.astro) entra con su animación al llegar a la vista.
+// - Cada pantalla tiene su dirección: la barra del navegador la muestra y "Atrás" regresa a la anterior.
+// - La página abre directo en la pantalla de su dirección (`inicial`).
+// Comportamiento en scripts/pantallas.js; estilos del contenedor en styles/recorrido.css.
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import '@/styles/recorrido.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} title
+ * @property {string} description
+ * @property {string} base ruta base ('' para la invitación general, '/i/<codigo>' para una familia)
+ * @property {string} inicial slug de la pantalla con la que abre ('' = portada)
+ * @property {boolean} [noindex]
+ * @property {'marfil' | 'noche'} [theme] tema del documento (noche en la invitación; marfil en la confirmación)
+ * @property {boolean} [fija] la dirección no cambia con la pantalla (el 404 conserva la ruta que se pidió)
+ * @property {string} [ogTitle] título de la vista previa de WhatsApp (por defecto el de la invitación general)
+ */
+
+const { title, description, base, inicial, noindex = false, theme = 'noche', fija = false, ogTitle } = /** @type {Props} */ (Astro.props);
+---
+
+<BaseLayout title={title} description={description} theme={theme} noindex={noindex} ogTitle={ogTitle}>
+	<main class="recorrido" data-recorrido data-base={base} data-inicial={inicial} data-fija={fija ? '' : undefined} tabindex="-1">
+		<slot />
+	</main>
+	<!-- Abre en la pantalla de la dirección antes del primer pintado (sin desplazamiento visible). -->
+	<script is:inline>
+		(function () {
+			var recorrido = document.querySelector('[data-recorrido]');
+			var slug = recorrido && recorrido.getAttribute('data-inicial');
+			if (!slug) return;
+			var pantalla = recorrido.querySelector('[data-screen][data-slug="' + slug + '"]');
+			if (pantalla) recorrido.scrollTo({ top: pantalla.offsetTop, behavior: 'instant' });
+		})();
+	</script>
+	<script>
+		import '@/scripts/pantallas.js';
+	</script>
+</BaseLayout>

@@ -1,0 +1,530 @@
+/* Pantalla aparte · Galería de la boda · las historias. docs/pantallas.md § 6.9 › Ver las fotos.
+ * Tableros del lienzo: GaleriaBoda-carrusel-c (390×844) y GaleriaBoda-historias-escritorio (1440×900).
+ *
+ * Celular: a pantalla completa. Las fotos (completas, sin recortar), su desenfoque, los velos y la zona de toque
+ * van a sangre (100cqw × 100cqh del recorrido, centrados en el tablero); barras, "Volver", total y pie, en
+ * coordenadas del tablero con --u.
+ * Computadora: la historia en 9:16 (461 × 820, esquinas de 16) al centro sobre su propia foto muy desenfocada,
+ * flechas a los lados, botón de pausa y la ayuda del teclado.
+ *
+ * Valores del lienzo que no son tokens: --hi-*. */
+
+.historias-pantalla {
+  --bw: 390;
+  --bh: 844;
+
+  --hi-marfil: #f7f2e8;
+  --hi-marfil-75: rgba(247, 242, 232, 0.75);
+  --hi-marfil-70: rgba(247, 242, 232, 0.7);
+  --hi-marfil-50: rgba(247, 242, 232, 0.5);
+  --hi-oro-claro: #e8cf9c;
+  --hi-oro-80: rgba(232, 207, 156, 0.8);
+  --hi-noche: #0f1522;
+  --hi-velo: rgba(15, 21, 34, 0.9);
+  --hi-velo-abajo: rgba(15, 21, 34, 0.96);
+  --hi-pista: rgba(247, 242, 232, 0.25);
+  --hi-flecha: rgba(247, 242, 232, 0.08);
+  --hi-flecha-hover: rgba(247, 242, 232, 0.16);
+  --hi-flecha-borde: rgba(247, 242, 232, 0.22);
+  --hi-sombra: rgba(4, 6, 12, 0.6);
+
+  background: var(--hi-noche);
+  color: var(--hi-marfil);
+}
+
+.historias {
+  position: absolute;
+  inset: 0;
+  font-weight: 400;
+  line-height: normal;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.historias > *,
+.historias__historia > * {
+  position: absolute;
+  margin: 0;
+}
+
+/* A sangre: toda la pantalla, centrada sobre el tablero. */
+.historias__fondo,
+.historias__fotos,
+.historias__toque {
+  left: calc(50% - 50cqw);
+  top: calc(50% - 50cqh);
+  width: 100cqw;
+  height: 100cqh;
+}
+
+.historias__fondo,
+.historias__fotos {
+  overflow: hidden;
+}
+
+/* ─── Fotos ───────────────────────────────────────────────────────── */
+
+.historias__foto {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.historias__foto.is-on {
+  opacity: 1;
+}
+
+.historias__desenfoque {
+  position: absolute;
+  inset: calc(-40 * var(--u));
+  width: calc(100% + 80 * var(--u));
+  height: calc(100% + 80 * var(--u));
+  object-fit: cover;
+  max-width: none; /* global.css limita las imágenes al 100 %: este desborda 40 por lado */
+  object-position: 50% 32%;
+  filter: blur(calc(26 * var(--u))) brightness(0.5) saturate(1.15);
+}
+
+/* En celular el desenfoque a sangre es el del fondo; el de la historia sobra. */
+.historias__fotos .historias__desenfoque {
+  display: none;
+}
+
+.historias__completa {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ─── La historia ─────────────────────────────────────────────────── */
+
+.historias__historia {
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Los velos llegan a las orillas de la pantalla (arriba y abajo) aunque el tablero no las toque. */
+.historias__velo {
+  left: calc(50% - 50cqw);
+  width: 100cqw;
+  pointer-events: none;
+}
+
+.historias__velo--arriba {
+  top: calc(50% - 50cqh);
+  height: calc(50cqh - 50% + 170 * var(--u));
+  background: linear-gradient(180deg, var(--hi-velo), transparent);
+}
+
+.historias__velo--abajo {
+  bottom: calc(50% - 50cqh);
+  height: calc(50cqh - 50% + 300 * var(--u));
+  background: linear-gradient(0deg, var(--hi-velo-abajo) 30%, transparent);
+}
+
+.historias__barras {
+  left: calc(20 * var(--u));
+  right: calc(20 * var(--u));
+  top: calc(16 * var(--u));
+  z-index: 4;
+  display: flex;
+  gap: calc(5 * var(--u));
+  pointer-events: none;
+}
+
+.historias__barra {
+  flex: 1;
+  height: max(1px, calc(2 * var(--u)));
+  border-radius: 2px;
+  background: var(--hi-pista);
+  overflow: hidden;
+}
+
+.historias__barra i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--hi-oro-claro);
+}
+
+.historias__barra.is-done i {
+  width: 100%;
+}
+
+/* Dos animaciones iguales con distinto nombre: al cambiar de foto la barra siempre empieza de cero. */
+.historias__barra.is-now-a i {
+  animation: historias-avance-a 5s linear forwards;
+}
+
+.historias__barra.is-now-b i {
+  animation: historias-avance-b 5s linear forwards;
+}
+
+.is-paused .historias__barra i {
+  animation-play-state: paused;
+}
+
+.historias__total {
+  right: calc(22 * var(--u));
+  top: calc(42 * var(--u));
+  z-index: 4;
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(11 * var(--u)));
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--hi-marfil-75);
+  pointer-events: none;
+}
+
+.historias__pausa {
+  display: none;
+}
+
+.historias__noche {
+  left: 0;
+  right: 0;
+  top: calc(656 * var(--u));
+  text-align: center;
+  font-family: var(--font-script);
+  font-size: calc(40 * var(--u));
+  line-height: calc(50 * var(--u));
+  color: var(--hi-oro-claro);
+  clip-path: inset(0 100% 0 0);
+  animation: historias-escribe 1.8s cubic-bezier(0.45, 0, 0.2, 1) 0.6s forwards;
+  pointer-events: none;
+}
+
+.historias__pie {
+  left: calc(24 * var(--u));
+  right: calc(24 * var(--u));
+  top: calc(716 * var(--u));
+  height: calc(60 * var(--u));
+  text-align: center;
+  pointer-events: none;
+}
+
+.historias__quien {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.historias__quien.is-on {
+  opacity: 1;
+}
+
+.historias__familia {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: calc(26 * var(--u));
+  line-height: calc(30 * var(--u));
+  color: var(--hi-marfil);
+}
+
+.historias__hora {
+  margin: calc(4 * var(--u)) 0 0;
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hi-oro-80);
+}
+
+/* Sin nombre (enlace general): la hora sola, en el lugar del pie. */
+.historias__quien > .historias__hora:first-child {
+  margin-top: 0;
+}
+
+.historias__toque {
+  z-index: 3;
+  touch-action: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.historias__volver {
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  min-height: calc(40 * var(--u));
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(11 * var(--u)));
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--hi-marfil-70);
+}
+
+/* Objetivo táctil de 44 px sin mover la composición del tablero. */
+.historias__volver::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: max(44px, 100%);
+  transform: translateY(-50%);
+}
+
+.historias__volver svg {
+  width: calc(15 * var(--u));
+  height: calc(15 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.historias__volver--celular {
+  left: calc(22 * var(--u));
+  top: calc(30 * var(--u));
+}
+
+.historias__volver--lado,
+.historias__ayuda,
+.historias__flecha {
+  display: none;
+}
+
+/* ─── Computadora (tablero 1440×900) ──────────────────────────────── */
+
+@container recorrido (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .historias-pantalla {
+    --bw: 1440;
+    --bh: 900;
+  }
+
+  .historias__fondo .historias__desenfoque {
+    inset: calc(-120 * var(--u));
+    width: calc(100% + 240 * var(--u));
+    height: calc(100% + 240 * var(--u));
+    filter: blur(calc(60 * var(--u))) brightness(0.32) saturate(1.1);
+  }
+
+  .historias__volver--celular {
+    display: none;
+  }
+
+  .historias__volver--lado {
+    display: flex;
+    left: calc(40 * var(--u));
+    top: calc(32 * var(--u));
+    gap: calc(8 * var(--u));
+    font-size: max(10px, calc(12 * var(--u)));
+    color: var(--hi-marfil-75);
+  }
+
+  .historias__volver--lado svg {
+    width: calc(16 * var(--u));
+    height: calc(16 * var(--u));
+  }
+
+  .historias__ayuda {
+    display: block;
+    left: calc(40 * var(--u));
+    bottom: calc(36 * var(--u));
+    font-family: var(--font-serif);
+    font-size: max(17px, calc(17 * var(--u)));
+    font-style: italic;
+    color: var(--hi-marfil-50);
+  }
+
+  .historias__flecha {
+    z-index: 4;
+    top: calc(424 * var(--u));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: content-box;
+    width: calc(52 * var(--u));
+    height: calc(52 * var(--u));
+    padding: 0;
+    border-radius: 50%;
+    background: var(--hi-flecha);
+    border: 1px solid var(--hi-flecha-borde);
+    color: var(--hi-marfil);
+    cursor: pointer;
+    transition: background-color 0.25s ease, transform 0.25s ease;
+  }
+
+  .historias__flecha:hover {
+    background: var(--hi-flecha-hover);
+    transform: scale(1.05);
+  }
+
+  .historias__flecha--anterior {
+    left: calc(405 * var(--u));
+  }
+
+  .historias__flecha--siguiente {
+    left: calc(982 * var(--u));
+  }
+
+  .historias__flecha svg {
+    width: calc(18 * var(--u));
+    height: calc(18 * var(--u));
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .historias__historia {
+    left: calc(489 * var(--u));
+    top: calc(40 * var(--u));
+    width: calc(461 * var(--u));
+    height: calc(820 * var(--u));
+    border-radius: calc(16 * var(--u));
+    overflow: hidden;
+    background: var(--hi-noche);
+    box-shadow: 0 calc(30 * var(--u)) calc(80 * var(--u)) var(--hi-sombra);
+  }
+
+  .historias__fotos,
+  .historias__toque {
+    inset: 0;
+    width: auto;
+    height: auto;
+  }
+
+  .historias__fotos .historias__desenfoque {
+    display: block;
+  }
+
+  .historias__velo {
+    left: 0;
+    right: 0;
+    width: auto;
+  }
+
+  .historias__velo--arriba {
+    top: 0;
+    height: calc(150 * var(--u));
+    background: linear-gradient(180deg, rgba(15, 21, 34, 0.85), transparent);
+  }
+
+  .historias__velo--abajo {
+    bottom: 0;
+    height: calc(280 * var(--u));
+    background: linear-gradient(0deg, rgba(15, 21, 34, 0.95) 30%, transparent);
+  }
+
+  .historias__barras {
+    left: calc(16 * var(--u));
+    right: calc(16 * var(--u));
+    top: calc(14 * var(--u));
+  }
+
+  .historias__total {
+    left: calc(18 * var(--u));
+    right: auto;
+    top: calc(34 * var(--u));
+  }
+
+  .historias__pausa {
+    z-index: 4;
+    right: calc(10 * var(--u));
+    top: calc(24 * var(--u));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: max(40px, calc(40 * var(--u)));
+    height: max(40px, calc(40 * var(--u)));
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: var(--hi-marfil);
+    cursor: pointer;
+  }
+
+  .historias__pausa svg {
+    display: block;
+    flex: none;
+    width: calc(18 * var(--u));
+    height: calc(18 * var(--u));
+    fill: none;
+    stroke: var(--hi-marfil);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .historias__pausa .historias__reanudar {
+    stroke-width: 1.6;
+  }
+
+  .historias__noche {
+    top: calc(638 * var(--u));
+    font-size: calc(42 * var(--u));
+    line-height: calc(52 * var(--u));
+  }
+
+  .historias__pie {
+    left: calc(20 * var(--u));
+    right: calc(20 * var(--u));
+    top: calc(700 * var(--u));
+    height: calc(64 * var(--u));
+  }
+
+  .historias__familia {
+    font-size: calc(28 * var(--u));
+    line-height: calc(32 * var(--u));
+  }
+}
+
+@keyframes historias-avance-a {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes historias-avance-b {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes historias-escribe {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .historias__foto,
+  .historias__quien {
+    transition: none;
+  }
+
+  .historias__noche {
+    animation: none;
+    clip-path: none;
+  }
+
+  .historias__flecha {
+    transition: none;
+  }
+}

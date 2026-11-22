@@ -1,0 +1,90 @@
+---
+// Destellos flotantes con halo opcional. Decorativo (aria-hidden); llena su contenedor (position: absolute).
+//
+// Cada destello se describe en pixeles del tablero de diseño:
+//   - horizontal: en % del ancho del contenedor (left / frameWidth), para que acompañe a una foto a sangre;
+//   - vertical, tamaño, desenfoque y movimiento: en unidades de diseño (--u).
+
+/**
+ * @typedef {Object} Destello
+ * @property {number} left px en el tablero
+ * @property {number} top px en el tablero
+ * @property {number} size diámetro en px del tablero
+ * @property {string} color
+ * @property {number} blur px del tablero
+ * @property {number} opacity
+ * @property {number} [duration] segundos del ciclo (por defecto 11)
+ * @property {number} [delay] segundos (negativo = empieza a mitad del ciclo)
+ * @property {boolean} [glow] halo suave alrededor
+ */
+
+/**
+ * @typedef {Object} Props
+ * @property {number} frameWidth ancho del tablero al que se refiere `left`
+ * @property {Destello[]} items
+ * @property {string} [class]
+ */
+
+const { frameWidth, items, class: className } = /** @type {Props} */ (Astro.props);
+
+/** @param {number} n */
+const u = (n) => `calc(${n} * var(--uu))`;
+
+/** @param {Destello} d */
+const estilo = (d) =>
+	[
+		`left:${((d.left / frameWidth) * 100).toFixed(3)}%`,
+		`top:${u(d.top)}`,
+		`width:${u(d.size)}`,
+		`height:${u(d.size)}`,
+		`background:${d.color}`,
+		`filter:blur(${u(d.blur)})`,
+		`--o:${d.opacity}`,
+		`animation-duration:${d.duration ?? 11}s`,
+		`animation-delay:${d.delay ?? 0}s`,
+		d.glow ? `box-shadow:0 0 ${u(d.size * 2)} ${d.color},0 0 ${u(d.size * 4)} rgba(232,207,156,0.35)` : '',
+	]
+		.filter(Boolean)
+		.join(';');
+---
+
+<div class:list={['sparkles', className]} aria-hidden="true">
+	{items.map((d) => <span class="sparkle" style={estilo(d)} />)}
+</div>
+
+<style>
+	.sparkles {
+		--uu: var(--u, 1px);
+
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	.sparkle {
+		position: absolute;
+		border-radius: var(--radius-oval);
+		opacity: var(--o);
+		animation-name: sparkle-float;
+		animation-timing-function: ease-in-out;
+		animation-iteration-count: infinite;
+	}
+
+	@keyframes sparkle-float {
+		0%,
+		100% {
+			transform: translate(0, 0);
+			opacity: var(--o);
+		}
+		50% {
+			transform: translate(calc(7 * var(--uu)), calc(-20 * var(--uu)));
+			opacity: calc(var(--o) * 0.6);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.sparkle {
+			animation: none;
+		}
+	}
+</style>

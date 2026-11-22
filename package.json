@@ -10,7 +10,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "qa:referencias": "node tools/qa/servir-referencias.mjs",
+    "qa:comparar": "node tools/qa/comparar.mjs",
+    "qa:recorrido": "node tools/qa/recorrido.mjs"
   },
   "dependencies": {
     "@astrojs/netlify": "^8.2.13",
@@ -20,5 +23,8 @@
     "astro": "^7.4.10",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.1"
   }
 }

@@ -1,0 +1,26 @@
+---
+// 404 (docs/pantallas.md § 6.8): cualquier ruta que no exista y, con el backend, un `/i/<codigo>` inexistente
+// (`return Astro.rewrite('/404')`). Página aparte del recorrido, de noche: Recorrido con una sola pantalla y la
+// dirección fija (la barra conserva la ruta que se pidió).
+import Recorrido from '@/layouts/Recorrido.astro';
+import { confirmacionDe, noEncontrada, tituloDe } from '@/screens/index.js';
+
+const { Componente } = noEncontrada;
+---
+
+<Recorrido
+	title={tituloDe(noEncontrada)}
+	description="Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara"
+	base=""
+	inicial={noEncontrada.slug}
+	noindex
+	fija
+>
+	<Componente
+		id={noEncontrada.id}
+		slug={noEncontrada.slug}
+		titulo={tituloDe(noEncontrada)}
+		codigo={confirmacionDe('')}
+		invitacion="/"
+	/>
+</Recorrido>

@@ -1,0 +1,248 @@
+---
+// Pantalla 6 · Galería (Un paso a la vez). docs/pantallas.md § 6.5.
+// Tableros del lienzo: HistoriaPeliculaOro (celular 390×1042) y HistoriaEscritorio (computadora 1440×900).
+// Estilos en galeria.css; fotos, película y estrellas en galeria.data.js.
+//
+// De noche, como el código de vestimenta. Encabezado → pila de fotos en película dorada (una por año; la del
+// año actual al frente y las anteriores salen volando) → año y pie → línea de años (flechas y puntos) →
+// voluta, cierre, llamado y "Compartir mis fotos" (lleva a la galería de la boda, § 6.9).
+//
+// Sin JS se ve el primer año y la línea de años se oculta (sus botones no harían nada).
+import Screen from '@/components/patterns/Screen.astro';
+import Button from '@/components/ui/Button.astro';
+import Ornament from '@/components/ui/Ornament.astro';
+import { ANIO_PENDIENTE, estrellas, fotos, pelicula } from './galeria.data.js';
+import './galeria.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {string} [siguiente] enlace a la siguiente pantalla (el tablero no lleva gesto de desplazamiento)
+ * @property {string} galeriaBoda dirección de la galería de la boda ("Compartir mis fotos", § 6.9; lo da la página)
+ */
+
+const { id, slug, titulo, galeriaBoda } = /** @type {Props} */ (Astro.props);
+
+/** Posición de cada cuadro en la pila respecto al año actual (la misma lógica que scripts del final). */
+const posicion = (/** @type {number} */ k, /** @type {number} */ actual) => {
+	const off = k - actual;
+	if (off < 0) return 'antes';
+	return off <= 2 ? String(off) : 'despues';
+};
+const zDe = (/** @type {number} */ k, /** @type {number} */ actual) => {
+	const off = k - actual;
+	return off < 0 ? 30 : 20 - off;
+};
+
+const anioDe = (/** @type {number} */ k) => (fotos[k]?.anio ? String(fotos[k].anio) : ANIO_PENDIENTE);
+const etiquetaDe = (/** @type {number} */ k) => (fotos[k]?.anio ? String(fotos[k].anio) : `Foto ${k + 1} de ${fotos.length}`);
+
+/** @param {number[]} estrella */
+const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}s;--t:${t}s`;
+
+const camara = ['M4 8h3l1.6-2.4h6.8L17 8h3v11H4z', 'M15.4 13a3.4 3.4 0 1 1-6.8 0a3.4 3.4 0 1 1 6.8 0'];
+---
+
+<Screen id={id} slug={slug} titulo={titulo} theme="noche" class="galeria" aria-labelledby="galeria-titulo">
+	<Fragment slot="fondo">
+		<div class="galeria__cielo" aria-hidden="true"></div>
+		<div class="galeria__luz galeria__luz--indigo" aria-hidden="true"></div>
+		<div class="galeria__luz galeria__luz--oro" aria-hidden="true"></div>
+		{
+			Object.entries(estrellas).map(([tamano, lista]) => (
+				<div class={`galeria__estrellas galeria__estrellas--${tamano}`} aria-hidden="true">
+					{lista.map((e) => (
+						<span class="galeria__estrella" style={estiloEstrella(e)} />
+					))}
+				</div>
+			))
+		}
+	</Fragment>
+
+	<div class="galeria__textos">
+		<p class="galeria__antetitulo">Galería</p>
+		<h2 id="galeria-titulo" class="galeria__titulo">Un paso a la vez</h2>
+		<p class="galeria__entrada">
+			Nos conocimos hace más de doce años y después de nueve años juntos; esta es nuestra historia.
+		</p>
+		<div class="galeria__cierre">
+			<div class="galeria__ornamento">
+				<Ornament variant="voluta" class="galeria__voluta" />
+			</div>
+			<p class="galeria__despedida">
+				Ahora nos encantaría seguir escribiéndola contigo. Te pedimos que nos ayudes a crear nuevos recuerdos de
+				esta etapa que comienza:
+			</p>
+			<p class="galeria__llamado">¡Compártenos las fotos que tomes esta noche!</p>
+			<div class="galeria__accion">
+				<Button href={galeriaBoda} variant="secondary" class="galeria__boton">
+					<svg class="galeria__icono" viewBox="0 0 24 24" aria-hidden="true">
+						{camara.map((d) => <path d={d} />)}
+					</svg>
+					Compartir mis fotos
+				</Button>
+			</div>
+		</div>
+	</div>
+
+	<div class="galeria__resplandor" aria-hidden="true"></div>
+
+	<div class="galeria__pila" data-galeria-pila>
+		{
+			fotos.map((foto, k) => (
+				<figure
+					class="galeria__cuadro"
+					data-galeria-cuadro
+					data-pos={posicion(k, 0)}
+					style={`z-index:${zDe(k, 0)}`}
+					aria-hidden={k === 0 ? undefined : 'true'}
+				>
+					<span class="galeria__vidrio" />
+					<span class="galeria__ventana">
+						{foto.imagen ? (
+							<img
+								src={foto.imagen.src}
+								width={foto.imagen.width}
+								height={foto.imagen.height}
+								alt={foto.alt ?? ''}
+								loading="lazy"
+								decoding="async"
+								class="galeria__foto"
+								style={foto.posicion ? `object-position:${foto.posicion}` : undefined}
+							/>
+						) : (
+							<span class="galeria__marcador" aria-hidden="true">
+								<svg viewBox="0 0 24 24" class="galeria__marcador-icono">
+									{camara.map((d) => (
+										<path d={d} />
+									))}
+								</svg>
+								<span class="galeria__marcador-texto">Foto del año</span>
+							</span>
+						)}
+					</span>
+					<svg class="galeria__pelicula" viewBox="0 0 236 332" aria-hidden="true">
+						{pelicula.map((t) => (
+							<path
+								class="galeria__trazo"
+								pathLength="1"
+								d={t.d}
+								stroke-width={t.trazo}
+								style={`--dur:${t.duracion}s;--r:${t.retraso}s;opacity:${t.opacidad}`}
+							/>
+						))}
+					</svg>
+					<span class="galeria__orilla galeria__orilla--izq" aria-hidden="true">IVAN &amp; EMMA</span>
+					<span class="galeria__orilla galeria__orilla--der" aria-hidden="true">{String(k + 1).padStart(2, '0')}</span>
+				</figure>
+			))
+		}
+	</div>
+
+	<p class="galeria__anio" data-galeria-anio aria-live="polite">{anioDe(0)}</p>
+	<p class="galeria__pie" data-galeria-pie>{fotos[0]?.pie ?? ''}</p>
+
+	<div class="galeria__linea" data-galeria-linea>
+		<button type="button" class="galeria__flecha" data-galeria-paso="-1" aria-label="Año anterior">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"></path></svg>
+		</button>
+		<div class="galeria__riel">
+			<span class="galeria__hilo" aria-hidden="true"></span>
+			<div class="galeria__puntos">
+				{
+					fotos.map((_, k) => (
+						<button
+							type="button"
+							class="galeria__punto"
+							data-galeria-punto={k}
+							data-anio={anioDe(k)}
+							data-pie={fotos[k]?.pie ?? ''}
+							aria-label={etiquetaDe(k)}
+							aria-current={k === 0 ? 'true' : undefined}
+						/>
+					))
+				}
+			</div>
+		</div>
+		<button type="button" class="galeria__flecha" data-galeria-paso="1" aria-label="Año siguiente">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"></path></svg>
+		</button>
+	</div>
+</Screen>
+
+<script>
+	// Línea de años: flechas, puntos y deslizar sobre la pila. Las flechas dan la vuelta (como el lienzo).
+	const pila = /** @type {HTMLElement | null} */ (document.querySelector('[data-galeria-pila]'));
+	const cuadros = /** @type {HTMLElement[]} */ ([...document.querySelectorAll('[data-galeria-cuadro]')]);
+	const puntos = /** @type {HTMLButtonElement[]} */ ([...document.querySelectorAll('[data-galeria-punto]')]);
+	const anio = /** @type {HTMLElement | null} */ (document.querySelector('[data-galeria-anio]'));
+	const pie = /** @type {HTMLElement | null} */ (document.querySelector('[data-galeria-pie]'));
+	const n = cuadros.length;
+	let actual = 0;
+
+	/** @param {number} i */
+	function mostrar(i) {
+		actual = (i + n) % n;
+		cuadros.forEach((cuadro, k) => {
+			const off = k - actual;
+			cuadro.dataset.pos = off < 0 ? 'antes' : off <= 2 ? String(off) : 'despues';
+			cuadro.style.zIndex = String(off < 0 ? 30 : 20 - off);
+			if (off === 0) cuadro.removeAttribute('aria-hidden');
+			else cuadro.setAttribute('aria-hidden', 'true');
+		});
+		puntos.forEach((p, k) => (k === actual ? p.setAttribute('aria-current', 'true') : p.removeAttribute('aria-current')));
+		const punto = puntos[actual];
+		if (anio && punto) {
+			anio.textContent = punto.dataset.anio ?? '';
+			// El año aparece de nuevo cada vez que cambia (como en el lienzo).
+			anio.classList.remove('is-cambio');
+			void anio.offsetWidth;
+			anio.classList.add('is-cambio');
+		}
+		if (pie && punto) pie.textContent = punto.dataset.pie ?? '';
+	}
+
+	for (const boton of document.querySelectorAll('[data-galeria-paso]')) {
+		boton.addEventListener('click', () => mostrar(actual + Number(/** @type {HTMLElement} */ (boton).dataset.galeriaPaso)));
+	}
+	puntos.forEach((p, k) => p.addEventListener('click', () => mostrar(k)));
+
+	// Flechas izquierda/derecha cuando el foco está en la línea de años.
+	document.querySelector('[data-galeria-linea]')?.addEventListener('keydown', (evento) => {
+		const tecla = /** @type {KeyboardEvent} */ (evento).key;
+		const paso = tecla === 'ArrowLeft' ? -1 : tecla === 'ArrowRight' ? 1 : 0;
+		if (!paso) return;
+		evento.preventDefault();
+		mostrar(actual + paso);
+		const enfocado = document.activeElement;
+		if (enfocado instanceof HTMLElement && enfocado.dataset.galeriaPunto !== undefined) puntos[actual]?.focus();
+	});
+
+	// Deslizar en celular: horizontal cambia de año; vertical sigue siendo el scroll del recorrido.
+	let x0 = 0;
+	let y0 = 0;
+	pila?.addEventListener(
+		'touchstart',
+		(evento) => {
+			const t = /** @type {TouchEvent} */ (evento).touches[0];
+			if (!t) return;
+			x0 = t.clientX;
+			y0 = t.clientY;
+		},
+		{ passive: true },
+	);
+	pila?.addEventListener(
+		'touchend',
+		(evento) => {
+			const t = /** @type {TouchEvent} */ (evento).changedTouches[0];
+			if (!t) return;
+			const dx = t.clientX - x0;
+			const dy = t.clientY - y0;
+			if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+			mostrar(actual + (dx < 0 ? 1 : -1));
+		},
+		{ passive: true },
+	);
+</script>

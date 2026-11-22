@@ -1,0 +1,230 @@
+/* Pantalla general · 404. Tableros General404 (390×844) y General404-escritorio (1440×900).
+ *
+ * Cada elemento está en las coordenadas del tablero, escaladas con la unidad de diseño --u (styles/screen.css).
+ * Textos con piso de legibilidad (max(17px, …)) y objetivos táctiles ≥ 44px en pantallas cortas.
+ * Valores exactos del tablero que no son tokens (como en la portada): --candle-from, --medallion-glass-*,
+ * el blanco de los títulos (#f7f2e8) y las opacidades del texto (.76 y .6) y del subrayado (.45). */
+
+.no-encontrada {
+  --bw: 390;
+  --bh: 844;
+
+  --candle-from: #1f2d44;
+  --medallion-width: calc(150 * var(--u));
+  --medallion-glass-inset: 4.076% 5.333%; /* 8 px sobre 150×196 */
+  --medallion-glass-border: rgba(247, 242, 232, 0.2);
+  --medallion-glass-blur: calc(16 * var(--u));
+  --no-encontrada-titulo: #f7f2e8;
+  --no-encontrada-texto: rgba(247, 242, 232, 0.76);
+  --no-encontrada-ayuda: rgba(247, 242, 232, 0.6);
+  --no-encontrada-subrayado: rgba(232, 207, 156, 0.45);
+}
+
+.no-encontrada__fondo {
+  position: absolute;
+  inset: 0;
+}
+
+.no-encontrada__fondo--computadora {
+  display: none;
+}
+
+/* ─── Medallón chico: 150×196 a 110 px ────────────────────────────── */
+
+.no-encontrada__medallon {
+  position: absolute;
+  left: calc(120 * var(--u));
+  top: calc(110 * var(--u));
+}
+
+/* ─── Nombres: Jost 12/500 espaciado, oro, a 346 px ───────────────── */
+
+.no-encontrada__nombres {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(346 * var(--u));
+  font-family: var(--font-sans);
+  font-size: max(12px, calc(12 * var(--u)));
+  font-weight: 500;
+  line-height: normal;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--gold);
+  animation-delay: 2.8s;
+}
+
+/* ─── Título: Cormorant 300 a 38/43, a 376 px, margen de 28 px ────── */
+
+.no-encontrada__titulo {
+  position: absolute;
+  left: calc(28 * var(--u));
+  right: calc(28 * var(--u));
+  top: calc(376 * var(--u));
+  font-size: calc(38 * var(--u));
+  font-weight: 300;
+  line-height: calc(43 * var(--u));
+  text-align: center;
+  text-wrap: balance;
+  color: var(--no-encontrada-titulo);
+  animation-delay: 2.8s;
+}
+
+/* ─── Texto: cursiva 19/26 en 326 px, a 478 px ────────────────────── */
+
+.no-encontrada__texto {
+  position: absolute;
+  left: calc(32 * var(--u));
+  width: calc(326 * var(--u));
+  top: calc(478 * var(--u));
+  font-size: max(17px, calc(19 * var(--u)));
+  font-style: italic;
+  font-weight: 400;
+  line-height: max(23px, calc(26 * var(--u)));
+  text-align: center;
+  text-wrap: balance;
+  color: var(--no-encontrada-texto);
+  animation-delay: 3.05s;
+}
+
+/* ─── Acciones: botón de 52 px en 342 px y el enlace debajo, a 612 px ─ */
+
+.no-encontrada__acciones {
+  --btn-height: max(44px, calc(52 * var(--u)));
+  --btn-font-size: max(12px, calc(13 * var(--u)));
+  --btn-padding-x: 0;
+
+  position: absolute;
+  left: calc(24 * var(--u));
+  width: calc(342 * var(--u));
+  top: calc(612 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  animation-delay: 3.3s;
+}
+
+.no-encontrada__enlace {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  line-height: normal;
+  color: var(--gold-deep);
+  text-decoration: underline;
+  text-decoration-color: var(--no-encontrada-subrayado);
+  text-underline-offset: 4px;
+}
+
+.no-encontrada__acciones .no-encontrada__enlace {
+  display: inline-block;
+  min-height: 44px; /* el lienzo mide 42: lo que falta queda abajo, el texto no se mueve */
+  padding: calc(10 * var(--u)) 0;
+  font-size: max(17px, calc(18 * var(--u)));
+}
+
+.no-encontrada__enlace:hover {
+  color: var(--gold);
+}
+
+/* ─── Ayuda: cursiva 17/22 a 36 px del borde inferior ─────────────── */
+
+.no-encontrada__ayuda {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(36 * var(--u));
+  font-size: 17px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 22px;
+  text-align: center;
+  color: var(--no-encontrada-ayuda);
+  animation-delay: 3.3s;
+}
+
+.no-encontrada__ayuda .no-encontrada__enlace {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* ─── Computadora (tablero General404-escritorio, 1440×900) ───────── */
+
+@container recorrido (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .no-encontrada {
+    --bw: 1440;
+    --bh: 900;
+    --medallion-width: calc(180 * var(--u));
+    --medallion-glass-inset: 3.81% 5%; /* 9 px sobre 180×236 */
+  }
+
+  .no-encontrada__fondo--celular {
+    display: none;
+  }
+
+  .no-encontrada__fondo--computadora {
+    display: block;
+  }
+
+  .no-encontrada__medallon {
+    left: calc(630 * var(--u));
+    top: calc(120 * var(--u));
+  }
+
+  .no-encontrada__nombres {
+    top: calc(404 * var(--u));
+  }
+
+  .no-encontrada__titulo {
+    left: 0;
+    right: 0;
+    top: calc(434 * var(--u));
+    font-size: calc(54 * var(--u));
+    line-height: calc(60 * var(--u));
+  }
+
+  .no-encontrada__texto {
+    left: calc(390 * var(--u));
+    width: calc(660 * var(--u));
+    top: calc(512 * var(--u));
+    font-size: max(17px, calc(21 * var(--u)));
+    line-height: max(23px, calc(29 * var(--u)));
+  }
+
+  .no-encontrada__acciones {
+    left: calc(540 * var(--u));
+    width: calc(360 * var(--u));
+    top: calc(650 * var(--u));
+  }
+
+  .no-encontrada__ayuda {
+    bottom: calc(44 * var(--u));
+  }
+}
+
+/* ─── Entradas: suben 16 px tras el medallón ──────────────────────── */
+
+.no-encontrada__entra {
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  animation-name: no-encontrada-sube;
+  animation-duration: 1s;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+  animation-fill-mode: forwards;
+}
+
+@keyframes no-encontrada-sube {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .no-encontrada__entra {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

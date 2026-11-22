@@ -1,10 +1,13 @@
-/* Cuenta regresiva. Medidas de design/reference/portada.html; colores con tokens. */
+/* Cuenta regresiva. Medidas de la portada aprobada en unidades de diseño (--u; 1px fuera de una pantalla).
+   Colores con tokens. */
 
 .countdown {
+  --uu: var(--u, 1px);
+
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  gap: var(--space-1);
+  gap: calc(4 * var(--uu));
 }
 
 .grupo {
@@ -15,16 +18,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 46px;
+  min-width: calc(46 * var(--uu));
 }
 
 .unidadAncha {
-  min-width: 52px;
+  min-width: calc(52 * var(--uu));
 }
 
 .numero {
   font-family: var(--font-serif);
-  font-size: 32px;
+  font-size: calc(32 * var(--uu));
   line-height: 1;
   font-weight: 300;
   font-variant-numeric: lining-nums tabular-nums;
@@ -33,15 +36,15 @@
 
 .etiqueta {
   font-family: var(--font-sans);
-  font-size: 11px;
-  line-height: 16px;
+  font-size: max(10px, calc(11 * var(--uu)));
+  line-height: 1.4545; /* 16 / 11 */
   font-weight: 400;
   color: var(--ink-muted);
 }
 
 .separador {
   font-family: var(--font-serif);
-  font-size: 24px;
+  font-size: calc(24 * var(--uu));
   line-height: 1.1;
   color: var(--gold);
   animation: countdown-tick 1s steps(1) infinite;

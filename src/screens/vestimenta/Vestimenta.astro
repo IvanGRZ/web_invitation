@@ -1,0 +1,84 @@
+---
+// Pantalla 5 · Código de vestimenta (propuesta A · Gala). docs/pantallas.md § 6.4.
+// Tableros del lienzo: VestimentaGala (celular 390×740) y VestimentaEscritorio (computadora 1440×900).
+// Estilos en vestimenta.css; datos de diseño en vestimenta.data.js; el código y "sólo adultos" salen de config/evento.js.
+//
+// De noche, sin ola: continúa la noche con la que termina el itinerario y sigue en la galería.
+// Encabezado → dos columnas (moño y vestido en línea dorada que se dibujan) → voluta → placa de vidrio "Sólo adultos".
+import Screen from '@/components/patterns/Screen.astro';
+import GlassCard from '@/components/ui/GlassCard.astro';
+import Ornament from '@/components/ui/Ornament.astro';
+import { evento } from '@/config/evento.js';
+import { columnas, estrellas } from './vestimenta.data.js';
+import './vestimenta.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {string} [siguiente] enlace a la siguiente pantalla (el tablero no lleva gesto de desplazamiento)
+ */
+
+const { id, slug, titulo } = /** @type {Props} */ (Astro.props);
+
+/** @param {number[]} estrella */
+const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}s;--t:${t}s`;
+---
+
+<Screen id={id} slug={slug} titulo={titulo} theme="noche" class="vestimenta" aria-labelledby="vestimenta-titulo">
+	<Fragment slot="fondo">
+		<div class="vestimenta__cielo" aria-hidden="true"></div>
+		<div class="vestimenta__luz vestimenta__luz--indigo" aria-hidden="true"></div>
+		<div class="vestimenta__luz vestimenta__luz--oro" aria-hidden="true"></div>
+		{
+			Object.entries(estrellas).map(([tamano, lista]) => (
+				<div class={`vestimenta__estrellas vestimenta__estrellas--${tamano}`} aria-hidden="true">
+					{lista.map((e) => (
+						<span class="vestimenta__estrella" style={estiloEstrella(e)} />
+					))}
+				</div>
+			))
+		}
+	</Fragment>
+
+	<p class="vestimenta__antetitulo">Código de vestimenta</p>
+	<h2 id="vestimenta-titulo" class="vestimenta__titulo">{evento.vestimenta}</h2>
+
+	<ul class="vestimenta__columnas" role="list">
+		{
+			columnas.map((c) => (
+				<li class={`vestimenta__columna vestimenta__columna--${c.clave}`} style={`--r:${c.retraso}s`}>
+					<span class="vestimenta__dibujo">
+						<svg
+							viewBox={c.dibujo.viewBox}
+							style={`--ancho:${c.dibujo.ancho};--alto:${c.dibujo.alto};--ancho-c:${c.dibujo.computadora.ancho};--alto-c:${c.dibujo.computadora.alto};stroke-width:${c.dibujo.trazo}`}
+							aria-hidden="true"
+						>
+							{c.dibujo.trazos.map((t) => (
+								<path class="vestimenta__trazo" pathLength="1" style={`--r:${t.retraso}s`} d={t.d} />
+							))}
+						</svg>
+					</span>
+					<p class="vestimenta__quien">{c.quien}</p>
+					<p class="vestimenta__prenda">{c.prenda}</p>
+				</li>
+			))
+		}
+	</ul>
+	<span class="vestimenta__filete" aria-hidden="true"></span>
+
+	<div class="vestimenta__ornamento">
+		<Ornament variant="voluta" class="vestimenta__voluta" />
+	</div>
+
+	{
+		evento.soloAdultos && (
+			<GlassCard class="vestimenta__placa">
+				<p class="vestimenta__adultos">Sólo adultos</p>
+				<p class="vestimenta__frase">No lo nieguen, a ustedes también les gusta la idea de dejar a sus niños en casa.</p>
+				<p class="vestimenta__edad">Evento exclusivo para mayores de 18 años</p>
+			</GlassCard>
+		)
+	}
+</Screen>

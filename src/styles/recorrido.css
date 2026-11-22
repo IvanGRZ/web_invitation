@@ -1,0 +1,49 @@
+/* Recorrido de pantallas (layouts/Recorrido.astro).
+ *
+ * El scroll vive en este contenedor y no en el documento: así la barra del navegador del celular
+ * no se encoge al bajar y cada pantalla mide siempre lo mismo (en iOS, al colapsar la barra, una
+ * pantalla de 100svh dejaría asomar la siguiente).
+ *
+ * Es el contenedor `recorrido` (container-type: size): screen.css calcula la unidad de diseño con
+ * cqw / cqh, que miden la pantalla visible sin la barra de scroll. */
+
+:root:has(.recorrido) {
+  height: 100%;
+  overflow: hidden;
+}
+
+:root:has(.recorrido) body {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.recorrido {
+  container: recorrido / size;
+  position: relative; /* referencia de offsetTop de las pantallas */
+  height: 100vh;
+  height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: none;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  /* Sin barra de scroll: son pantallas, no un documento largo. Se mueven igual con rueda, dedo y teclado. */
+  scrollbar-width: none;
+}
+
+.recorrido::-webkit-scrollbar {
+  display: none;
+}
+
+/* Recibe el foco al cargar para que el teclado (espacio, flechas, AvPág) mueva el recorrido;
+ * no es un control, no necesita anillo de foco. */
+.recorrido:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recorrido {
+    scroll-behavior: auto;
+  }
+}

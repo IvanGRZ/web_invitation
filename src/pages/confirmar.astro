@@ -1,0 +1,24 @@
+---
+// Confirmación de la invitación general (`/confirmar`): sin código no se sabe la familia, así que la pantalla
+// pide el código de la invitación (el candado; nunca se busca por nombre). Con él lleva a la confirmación de
+// esa familia, `/i/<codigo>/confirmar` (CLAUDE.md § 7 › Rutas; se construye con el backend).
+// Es una página aparte del recorrido, de día: Recorrido con una sola pantalla (dirección y título de la
+// pestaña como las demás) y tema marfil.
+import Recorrido from '@/layouts/Recorrido.astro';
+import { confirmacion, pantallas, rutaDe, tituloDe } from '@/screens/index.js';
+
+const base = '';
+const { Componente } = confirmacion;
+const description = 'Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara';
+---
+
+<Recorrido title={tituloDe(confirmacion)} description={description} base={base} inicial={confirmacion.slug} theme="marfil">
+	<Componente
+		id={confirmacion.id}
+		slug={confirmacion.slug}
+		titulo={tituloDe(confirmacion)}
+		estado="candado"
+		volver={rutaDe(base, pantallas[0].slug)}
+		destinoCodigo="/i/{codigo}/confirmar"
+	/>
+</Recorrido>

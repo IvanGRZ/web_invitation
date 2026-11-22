@@ -1,0 +1,78 @@
+---
+// Pantalla 1 · Portada (propuesta D · Velas + medallón). CLAUDE.md § 6.
+// Tableros del lienzo: Velas (celular 390×844) y PortadaEscritorio (computadora 1440×900: la misma
+// columna centrada, con la luz, los halos y los destellos repartidos en todo el ancho).
+// Estilos en portada.css; composición del fondo en portada.data.js.
+import Screen from '@/components/patterns/Screen.astro';
+import CandleBackdrop from '@/components/patterns/CandleBackdrop.astro';
+import Medallion from '@/components/patterns/Medallion.astro';
+import Countdown from '@/components/patterns/Countdown.jsx';
+import ScrollCue from '@/components/patterns/ScrollCue.astro';
+import GlassCard from '@/components/ui/GlassCard.astro';
+import Button from '@/components/ui/Button.astro';
+import { evento } from '@/config/evento.js';
+import { fechaLarga } from '@/lib/fechas.js';
+import { fondoCelular, fondoComputadora } from './portada.data.js';
+import './portada.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {string} [siguiente] enlace a la siguiente pantalla (gesto de desplazamiento)
+ * @property {string} confirmar dirección de la pantalla de confirmación (lo da la página)
+ */
+
+const { id, slug, titulo, siguiente, confirmar } = /** @type {Props} */ (Astro.props);
+const { el, ella } = evento.novios;
+const fecha = fechaLarga(evento.ceremonia.inicio, { mayuscula: true });
+---
+
+<Screen
+	id={id}
+	slug={slug}
+	titulo={titulo}
+	theme="noche"
+	alinear="centro"
+	class="portada"
+	aria-label={`${el.nombre} y ${ella.nombre}`}
+>
+	<Fragment slot="fondo">
+		<div class="portada__fondo portada__fondo--celular">
+			<CandleBackdrop {...fondoCelular} />
+		</div>
+		<div class="portada__fondo portada__fondo--computadora">
+			<CandleBackdrop {...fondoComputadora} />
+		</div>
+	</Fragment>
+
+	<div class="portada__medallon">
+		<Medallion />
+	</div>
+
+	<h1 class="portada__nombres">
+		<span class="portada__el">{el.nombre}</span>
+		<span class="portada__ella"><span class="portada__y">&amp;</span>{ella.nombre}</span>
+	</h1>
+
+	<p class="portada__fecha portada__entra">{fecha}</p>
+
+	<div class="portada__cuenta portada__entra">
+		<GlassCard class="portada__tarjeta">
+			<Countdown client:visible target={evento.ceremonia.inicio} />
+		</GlassCard>
+	</div>
+
+	<div class="portada__cta portada__entra">
+		<Button href={confirmar} block>Confirmar asistencia</Button>
+	</div>
+
+	{
+		siguiente && (
+			<div class="portada__gesto">
+				<ScrollCue href={siguiente} />
+			</div>
+		)
+	}
+</Screen>

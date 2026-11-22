@@ -1,0 +1,188 @@
+---
+// Pantalla aparte · Galería de la boda (subir fotos y el rollo). docs/pantallas.md § 6.9.
+// Tableros del lienzo: GaleriaBoda-subir-c / -subir-escritorio (subir), sus mensajes (-vacia, -offline, -rechazo,
+// -fallo, -listo), -antes-b / -antes-escritorio (el rollo sin revelar) y -cerrada / -cerrada-escritorio.
+// Las historias son otra pantalla (Historias.astro). Estilos en galeria-boda.css; datos en galeria-boda.data.js.
+//
+// De noche, fuera del recorrido: llega aquí "Compartir mis fotos" de la galería (§ 6.5). `estado` sale de la hora
+// (galeria-boda.data.js › estadoDe, con evento.galeriaBoda) y lo decide la página en cada visita:
+//   antes     antes del sábado 20 de febrero a las 18:00: el rollo sin revelar con cuánto falta (en vivo)
+//   abierta   subir fotos (SubirFotos.jsx, isla)
+//   cerrada   desde el domingo 21 a las 12:00: el rollo completo y "Ver las historias de la noche"
+import Screen from '@/components/patterns/Screen.astro';
+import Button from '@/components/ui/Button.astro';
+import SubirFotos from './SubirFotos.jsx';
+import { evento } from '@/config/evento.js';
+import { fechaLarga, horaReloj } from '@/lib/fechas.js';
+import { estrellas, faltan, recuerdos } from './galeria-boda.data.js';
+import './galeria-boda.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {'antes' | 'abierta' | 'cerrada'} estado
+ * @property {string} volver dirección de la invitación ("Volver a la invitación")
+ * @property {string} historias dirección de las historias
+ * @property {string | null} [familia] con /i/<codigo>: "Compartiendo como Familia X"
+ * @property {number} [total] recuerdos compartidos
+ * @property {import('./galeria-boda.data.js').Foto[]} [mias] "Tus fotos"
+ * @property {number} [ahora] instante de la visita (ms), para cuánto falta
+ * @property {string} [accion] action del formulario sin JS (TODO(backend))
+ * @property {Object} [simular] sólo páginas de muestra: subida sin backend (ver SubirFotos.jsx)
+ * @property {Object} [inicio] sólo páginas de muestra: estado con el que abre (ver SubirFotos.jsx)
+ */
+
+const {
+	id,
+	slug,
+	titulo,
+	estado,
+	volver,
+	historias,
+	familia = null,
+	total = 0,
+	mias = [],
+	ahora = Date.now(),
+	accion,
+	simular,
+	inicio,
+} = /** @type {Props} */ (Astro.props);
+
+const { apertura, cierre } = evento.galeriaBoda;
+const rollo = estado !== 'abierta';
+const abre = `El ${fechaLarga(apertura, { anio: false })}, a las ${horaReloj(apertura)}`;
+const cerro = `${fechaLarga(cierre, { anio: false })} a las ${horaReloj(cierre)}`;
+
+/** @param {number[]} e */
+const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}s;--t:${t}s`;
+const cielos = { celular: estrellas.celular, computadora: rollo ? estrellas.rollo : estrellas.computadora };
+---
+
+<Screen id={id} slug={slug} titulo={titulo} theme="noche" class:list={['galeria-boda', `galeria-boda--${estado}`]}>
+	<Fragment slot="fondo">
+		<div class="galeria-boda__cielo" aria-hidden="true"></div>
+		<div class="galeria-boda__luz galeria-boda__luz--indigo" aria-hidden="true"></div>
+		<div class="galeria-boda__luz galeria-boda__luz--oro" aria-hidden="true"></div>
+		{
+			Object.entries(cielos).map(([tamano, lista]) => (
+				<div class={`galeria-boda__estrellas galeria-boda__estrellas--${tamano}`} aria-hidden="true">
+					{lista.map((e) => (
+						<span class="galeria-boda__estrella" style={estiloEstrella(e)} />
+					))}
+				</div>
+			))
+		}
+	</Fragment>
+
+	{
+		estado === 'abierta' && (
+			<div class="galeria-boda__isla">
+				<SubirFotos client:load familia={familia} total={total} mias={mias} historias={historias} volver={volver} accion={accion} simular={simular} inicio={inicio} />
+			</div>
+		)
+	}
+
+	{
+		rollo && (
+			<div class="galeria-boda__rollo">
+				<a class="galeria-boda__volver galeria-boda__solo-lado" href={volver}>
+					<svg class="galeria-boda__volver-icono" viewBox="0 0 24 24" aria-hidden="true">
+						<path d="M14.5 6l-6 6 6 6" />
+					</svg>
+					Volver a la invitación
+				</a>
+				<p class="galeria-boda__ceja" data-a="suave d1">Galería de la boda</p>
+				<div class="galeria-boda__pelicula" data-a="suave d2">
+					<svg viewBox="0 0 150 130" aria-hidden="true">
+						<path data-trazo style="--r: .5s" pathLength="1" d="M20 22h44v92H20z" />
+						<path data-trazo style="--r: .7s" pathLength="1" d="M26 14h32v8H26zM26 114h32v8H26zM36 6h12v8H36z" />
+						<path data-trazo style="--r: .9s" pathLength="1" d="M20 40h44M20 96h44" />
+						<path data-trazo style="--r: 1.1s" pathLength="1" d="M64 46h70q6 0 6 6v34q0 6-6 6H64" />
+						<g stroke-opacity=".7">
+							<path
+								data-trazo
+								style="--r: 1.4s"
+								pathLength="1"
+								d="M76 50h6v6h-6zM92 50h6v6h-6zM108 50h6v6h-6zM124 50h6v6h-6zM76 82h6v6h-6zM92 82h6v6h-6zM108 82h6v6h-6zM124 82h6v6h-6z"
+							/>
+						</g>
+						<text class="galeria-boda__pelicula-monograma" x="42" y="74" text-anchor="middle">I&amp;E</text>
+						<text class="galeria-boda__pelicula-fecha" x="42" y="88" text-anchor="middle">20·02·27</text>
+					</svg>
+				</div>
+
+				{
+					estado === 'antes' ? (
+						<>
+							<h1 class="galeria-boda__rollo-titulo" data-a="sube d3">
+								Este rollo se revela el día de la boda
+							</h1>
+							<p class="galeria-boda__rollo-texto" data-a="suave d4">
+								{abre}&nbsp;hrs, se abre la galería para que compartas tus fotos.
+							</p>
+							<p class="galeria-boda__faltan" data-a="suave d5" data-galeria-faltan data-objetivo={apertura}>
+								{faltan((Date.parse(apertura) - ahora) / 1000)}
+							</p>
+							<Button href={volver} variant="secondary" class="galeria-boda__boton galeria-boda__boton--volver" data-a="sube d6">
+								Volver a la invitación
+							</Button>
+							<p class="galeria-boda__guarda" data-a="suave d7">
+								Guarda este enlace: es el mismo que usarás esa noche.
+							</p>
+						</>
+					) : (
+						<>
+							<h1 class="galeria-boda__rollo-titulo" data-a="sube d3">
+								El rollo está{' '}
+								<br class="galeria-boda__solo-celular" />
+								completo
+							</h1>
+							<p class="galeria-boda__rollo-texto" data-a="suave d4">
+								La galería dejó de recibir fotos el {cerro}&nbsp;hrs. Gracias por compartir esa noche con nosotros.
+							</p>
+							<p class="galeria-boda__faltan" data-a="suave d5">
+								{recuerdos(total)}
+							</p>
+							<Button href={historias} class="galeria-boda__boton galeria-boda__boton--historias" data-a="sube d6">
+								Ver las historias de la noche
+							</Button>
+							<Button href={volver} variant="secondary" class="galeria-boda__boton galeria-boda__boton--volver galeria-boda__solo-celular" data-a="sube d6">
+								Volver a la invitación
+							</Button>
+							<p class="galeria-boda__guarda galeria-boda__solo-lado" data-a="suave d7">
+								<a class="galeria-boda__enlace galeria-boda__enlace--volver" href={volver}>
+									Volver a la invitación
+								</a>
+							</p>
+						</>
+					)
+				}
+			</div>
+		)
+	}
+</Screen>
+
+<script>
+	// Cuánto falta para que se abra la galería, en vivo. Al llegar la hora, la página se vuelve a pedir y el
+	// servidor ya la sirve abierta.
+	import { faltan } from './galeria-boda.data.js';
+
+	const el = /** @type {HTMLElement | null} */ (document.querySelector('[data-galeria-faltan]'));
+	if (el?.dataset.objetivo) {
+		const objetivo = Date.parse(el.dataset.objetivo);
+		const pintar = () => {
+			const s = (objetivo - Date.now()) / 1000;
+			if (s <= 0) {
+				clearInterval(reloj);
+				location.reload();
+				return;
+			}
+			const texto = faltan(s);
+			if (el.textContent !== texto) el.textContent = texto;
+		};
+		const reloj = setInterval(pintar, 1000);
+		pintar();
+	}
+</script>

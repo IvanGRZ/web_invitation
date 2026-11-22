@@ -1,21 +1,25 @@
-/* Botón (píldora). Estilo único compartido por Button.astro y Button.jsx.
-   Tomado de design/reference/bundle.css (.ie-btn); sólo tokens. */
+/* Botón. Estilo único compartido por Button.astro y Button.jsx.
+   Tomado de design/reference/bundle.css (.ie-btn); sólo tokens.
+   Radio de 12px (--radius-button) en todos los botones (bitácora 2026-11-11).
+   Una pantalla puede escalarlo con --btn-height, --btn-font-size y --btn-padding-x (unidades de diseño). */
 
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  min-height: 52px;
-  padding: 0 var(--space-8);
-  border-radius: var(--radius-pill);
+  min-height: var(--btn-height, 52px);
+  padding: 0 var(--btn-padding-x, var(--space-8));
+  border-radius: var(--radius-button);
   border: 1px solid transparent;
   font-family: var(--font-sans);
-  font-size: 13px;
-  line-height: 16px;
+  font-size: var(--btn-font-size, 13px);
+  line-height: normal; /* como en los tableros del lienzo */
   font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
   transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;

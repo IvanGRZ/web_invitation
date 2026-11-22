@@ -1,0 +1,467 @@
+/* Pantalla 5 · Código de vestimenta. Tableros del lienzo: VestimentaGala (390×740) y VestimentaEscritorio (1440×900).
+ *
+ * Composición de celular por defecto; de computadora cuando el recorrido mide ≥ 1024 px de ancho y es
+ * horizontal. Todo en coordenadas del tablero con la unidad de diseño --u (styles/screen.css).
+ * El tablero de celular mide 740 de alto y va centrado; la noche sigue a sangre arriba (#0f1522, la misma
+ * con la que termina el itinerario) y abajo (#141d2d, con la que empieza la galería).
+ *   Fondo (.screen__fondo, a sangre): cielo, halo índigo, luz dorada y estrellas, en coordenadas del tablero centrado.
+ *   Escenario (el tablero): encabezado, columnas Ellos / Ellas, filete, voluta y la placa "Sólo adultos".
+ *
+ * Valores del lienzo que no son tokens: --vs-*. */
+
+.vestimenta {
+  --bw: 390;
+  --bh: 740;
+
+  /* Altura del tablero (px del tablero) dentro de la capa a sangre: y = 50% + (N − bh/2)·u */
+  --vs-y0: calc(50% - var(--bh) / 2 * var(--u));
+
+  --vs-marfil: #f7f2e8;
+  --vs-cielo-1: #0f1522;
+  --vs-cielo-2: #121a29;
+  --vs-cielo-3: #141d2d;
+  --vs-halo: rgba(47, 74, 120, 0.42);
+  --vs-luz-oro: rgba(201, 168, 110, 0.12);
+  --vs-filete: rgba(201, 168, 110, 0.7);
+  --vs-vidrio: rgba(247, 242, 232, 0.08);
+  --vs-vidrio-borde: rgba(247, 242, 232, 0.18);
+  --vs-estrella: #fbefd2;
+  --vs-estrella-halo: rgba(246, 227, 180, 0.6);
+
+  background: var(--vs-cielo-1);
+  color: var(--vs-marfil);
+}
+
+/* ─── Fondo ───────────────────────────────────────────────────────── */
+
+.vestimenta__cielo,
+.vestimenta__estrellas {
+  position: absolute;
+  inset: 0;
+}
+
+.vestimenta__cielo {
+  background: linear-gradient(
+    180deg,
+    var(--vs-cielo-1) var(--vs-y0),
+    var(--vs-cielo-2) calc(var(--vs-y0) + var(--bh) * 0.45 * var(--u)),
+    var(--vs-cielo-3) calc(var(--vs-y0) + var(--bh) * var(--u))
+  );
+}
+
+.vestimenta__luz {
+  position: absolute;
+  left: calc(50% + (var(--x) - var(--bw) / 2) * var(--u));
+  top: calc(50% + (var(--y) - var(--bh) / 2) * var(--u));
+  width: calc(var(--s) * var(--u));
+  height: calc(var(--s) * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--c) 0%, transparent 70%);
+}
+
+.vestimenta__luz--indigo {
+  --x: -150;
+  --y: 380;
+  --s: 420;
+  --c: var(--vs-halo);
+}
+
+.vestimenta__luz--oro {
+  --x: 180; /* right −170, 380 de ancho */
+  --y: 120;
+  --s: 380;
+  --c: var(--vs-luz-oro);
+}
+
+.vestimenta__estrellas--computadora {
+  display: none;
+}
+
+.vestimenta__estrella {
+  position: absolute;
+  left: calc(50% + (var(--x) - var(--bw) / 2) * var(--u));
+  top: calc(50% + (var(--y) - var(--bh) / 2) * var(--u));
+  width: calc(var(--s) * var(--u));
+  height: calc(var(--s) * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--vs-estrella) 0%, var(--vs-estrella-halo) 40%, transparent 72%);
+  opacity: 0;
+  animation: vs-titila var(--t) ease-in-out var(--d) infinite;
+}
+
+/* ─── Encabezado ──────────────────────────────────────────────────── */
+
+.vestimenta__antetitulo,
+.vestimenta__titulo,
+.vestimenta__ornamento {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+.vestimenta__antetitulo,
+.vestimenta__quien,
+.vestimenta__adultos,
+.vestimenta__edad {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  line-height: normal; /* como el lienzo */
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.vestimenta__antetitulo,
+.vestimenta__quien,
+.vestimenta__adultos {
+  letter-spacing: 0.3em;
+  color: var(--gold);
+}
+
+.vestimenta__antetitulo {
+  top: calc(70 * var(--u));
+  font-size: max(10px, calc(12 * var(--u)));
+  opacity: 0;
+  animation: vs-suave 1.2s ease 0.1s forwards;
+}
+
+.vestimenta__titulo {
+  top: calc(96 * var(--u));
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: calc(42 * var(--u));
+  line-height: calc(46 * var(--u));
+  color: var(--vs-marfil);
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  animation: vs-sube 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 0.35s forwards;
+}
+
+/* ─── Ellos / Ellas ───────────────────────────────────────────────── */
+
+.vestimenta__columnas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vestimenta__columna {
+  position: absolute;
+  top: calc(196 * var(--u));
+  width: calc(160 * var(--u));
+  text-align: center;
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  animation: vs-sube 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) var(--r) forwards;
+}
+
+.vestimenta__columna--ellos {
+  left: calc(32 * var(--u));
+}
+
+.vestimenta__columna--ellas {
+  left: calc(198 * var(--u));
+}
+
+.vestimenta__dibujo {
+  height: calc(76 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vestimenta__dibujo svg {
+  display: block;
+  flex: none;
+  width: calc(var(--ancho) * var(--u));
+  height: calc(var(--alto) * var(--u));
+  max-width: none;
+  overflow: visible;
+  fill: none;
+  stroke: var(--gold);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.vestimenta__trazo {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: vs-dibuja 2.4s cubic-bezier(0.65, 0, 0.35, 1) var(--r) forwards;
+}
+
+.vestimenta__quien {
+  margin-top: calc(14 * var(--u));
+  font-size: max(10px, calc(11 * var(--u)));
+}
+
+.vestimenta__prenda {
+  margin-top: calc(6 * var(--u));
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: max(17px, calc(22 * var(--u)));
+  line-height: calc(26 * var(--u));
+  white-space: nowrap;
+  color: var(--vs-marfil);
+}
+
+/* Filete dorado vertical entre las dos columnas, que se desvanece en las puntas. */
+.vestimenta__filete {
+  position: absolute;
+  left: calc(195 * var(--u));
+  top: calc(206 * var(--u));
+  width: max(1px, calc(1 * var(--u)));
+  height: calc(140 * var(--u));
+  background: linear-gradient(180deg, transparent, var(--vs-filete), transparent);
+  opacity: 0;
+  animation: vs-suave 1.2s ease 1.1s forwards;
+}
+
+/* ─── Voluta ──────────────────────────────────────────────────────── */
+
+.vestimenta__ornamento {
+  top: calc(392 * var(--u));
+  opacity: 0;
+  animation: vs-suave 1.2s ease 1.5s forwards;
+}
+
+.vestimenta__voluta {
+  --ornament-width: 120;
+  --ornament-height: calc(10 * var(--u));
+
+  margin: 0 auto;
+}
+
+/* ─── Sólo adultos: placa de vidrio de noche ──────────────────────── */
+
+.vestimenta__placa {
+  --glass-card-bg: var(--vs-vidrio);
+  --glass-card-border: var(--vs-vidrio-borde);
+  --glass-card-radius: calc(24 * var(--u)); /* radius-lg en px del tablero */
+  --glass-card-blur: calc(18 * var(--u));
+
+  position: absolute;
+  left: calc(28 * var(--u));
+  right: calc(28 * var(--u));
+  top: calc(430 * var(--u));
+  box-sizing: border-box;
+  padding: calc(26 * var(--u)) calc(26 * var(--u)) calc(24 * var(--u));
+  text-align: center;
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  animation: vs-placa 1.4s cubic-bezier(0.2, 0.7, 0.2, 1) 1.9s forwards;
+}
+
+.vestimenta__adultos {
+  font-size: max(10px, calc(11 * var(--u)));
+}
+
+.vestimenta__frase {
+  margin-top: calc(12 * var(--u));
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: max(17px, calc(21 * var(--u)));
+  line-height: calc(29 * var(--u));
+  color: var(--vs-marfil);
+}
+
+/* Con el piso de 10 px en pantallas cortas (iPhone SE) el renglón es más ancho que el hueco de la placa:
+ * el margen negativo deja que use el relleno para seguir centrado. A tamaño del tablero no cambia nada. */
+.vestimenta__edad {
+  margin: calc(16 * var(--u)) calc(-26 * var(--u)) 0;
+  font-size: max(10px, calc(10 * var(--u)));
+  letter-spacing: 0.1em;
+  color: var(--gold-deep);
+}
+
+/* ─── Computadora (tablero 1440×900) ──────────────────────────────── */
+
+@container recorrido (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .vestimenta {
+    --bw: 1440;
+    --bh: 900;
+  }
+
+  .vestimenta__luz--indigo {
+    --x: -240;
+    --y: 380;
+    --s: 760;
+  }
+
+  .vestimenta__luz--oro {
+    --x: 980; /* right −260, 720 de ancho */
+    --y: -60;
+    --s: 720;
+  }
+
+  .vestimenta__estrellas--celular {
+    display: none;
+  }
+
+  .vestimenta__estrellas--computadora {
+    display: block;
+  }
+
+  .vestimenta__antetitulo {
+    top: calc(124 * var(--u));
+  }
+
+  .vestimenta__titulo {
+    top: calc(152 * var(--u));
+    font-size: calc(58 * var(--u));
+    line-height: calc(62 * var(--u));
+  }
+
+  .vestimenta__columna {
+    top: calc(288 * var(--u));
+    width: calc(240 * var(--u));
+  }
+
+  .vestimenta__columna--ellos {
+    left: calc(460 * var(--u));
+  }
+
+  .vestimenta__columna--ellas {
+    left: calc(740 * var(--u));
+  }
+
+  .vestimenta__dibujo {
+    height: calc(100 * var(--u));
+  }
+
+  .vestimenta__dibujo svg {
+    width: calc(var(--ancho-c) * var(--u));
+    height: calc(var(--alto-c) * var(--u));
+  }
+
+  .vestimenta__quien {
+    margin-top: calc(20 * var(--u));
+    font-size: max(10px, calc(12 * var(--u)));
+  }
+
+  .vestimenta__prenda {
+    margin-top: calc(8 * var(--u));
+    font-size: max(17px, calc(30 * var(--u)));
+    line-height: calc(34 * var(--u));
+  }
+
+  .vestimenta__filete {
+    left: calc(720 * var(--u));
+    top: calc(288 * var(--u));
+    height: calc(190 * var(--u));
+  }
+
+  .vestimenta__ornamento {
+    top: calc(532 * var(--u));
+  }
+
+  .vestimenta__voluta {
+    --ornament-width: 150;
+    --ornament-height: calc(12 * var(--u));
+  }
+
+  .vestimenta__placa {
+    left: calc(410 * var(--u)); /* 620 centrados en 1440 */
+    right: auto;
+    width: calc(620 * var(--u));
+    top: calc(580 * var(--u));
+    padding: calc(32 * var(--u)) calc(52 * var(--u)) calc(30 * var(--u));
+  }
+
+  .vestimenta__adultos {
+    font-size: max(10px, calc(12 * var(--u)));
+  }
+
+  .vestimenta__frase {
+    margin-top: calc(14 * var(--u));
+    font-size: max(17px, calc(25 * var(--u)));
+    line-height: calc(34 * var(--u));
+    text-wrap: balance;
+  }
+
+  .vestimenta__edad {
+    margin: calc(18 * var(--u)) calc(-52 * var(--u)) 0;
+    font-size: max(10px, calc(11 * var(--u)));
+    letter-spacing: 0.14em;
+  }
+}
+
+/* ─── Movimiento (la pantalla entra una vez, al llegar a la vista) ──── */
+
+@keyframes vs-suave {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes vs-sube {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* La placa sube y su vidrio se empaña. */
+@keyframes vs-placa {
+  from {
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    -webkit-backdrop-filter: blur(var(--glass-card-blur));
+    backdrop-filter: blur(var(--glass-card-blur));
+  }
+}
+
+@keyframes vs-dibuja {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes vs-titila {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  45%,
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Movimiento reducido: todo en su sitio, sin animar (las estrellas quietas). */
+@media (prefers-reduced-motion: reduce) {
+  .vestimenta__antetitulo,
+  .vestimenta__titulo,
+  .vestimenta__columna,
+  .vestimenta__trazo,
+  .vestimenta__filete,
+  .vestimenta__ornamento,
+  .vestimenta__placa,
+  .vestimenta__estrella {
+    animation: none !important;
+  }
+
+  .vestimenta__antetitulo,
+  .vestimenta__titulo,
+  .vestimenta__columna,
+  .vestimenta__filete,
+  .vestimenta__ornamento,
+  .vestimenta__placa {
+    opacity: 1;
+    transform: none;
+  }
+
+  .vestimenta__trazo {
+    stroke-dashoffset: 0;
+  }
+
+  .vestimenta__estrella {
+    opacity: 0.8;
+  }
+}

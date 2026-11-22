@@ -3,6 +3,8 @@
 import '@/styles/fonts.css';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
+import { evento } from '@/config/evento.js';
+import { fechaLarga } from '@/lib/fechas.js';
 
 // Precarga de lo primero que se ve (nombres y fecha de la portada), para que no cambien de fuente a media animación.
 import cormorant300 from '@/assets/fonts/CormorantGaramond-300.woff2?url';
@@ -14,9 +16,22 @@ import cormorant400Italic from '@/assets/fonts/CormorantGaramond-400-italic.woff
  * @property {string} description texto de la vista previa (WhatsApp, buscadores)
  * @property {'marfil' | 'noche'} [theme] tema del documento; cada sección puede fijar el suyo con data-theme
  * @property {boolean} [noindex] true en páginas personalizadas (/i/[codigo])
+ * @property {string} [ogTitle] título de la vista previa de WhatsApp (en /i/<codigo>: "… · Invitación para la {familia}")
  */
 
-const { title, description, theme = 'marfil', noindex = false } = /** @type {Props} */ (Astro.props);
+const nombres = `${evento.novios.el.nombre} & ${evento.novios.ella.nombre}`;
+const {
+	title,
+	description,
+	theme = 'marfil',
+	noindex = false,
+	ogTitle = `${nombres} · Nuestra boda`,
+} = /** @type {Props} */ (Astro.props);
+
+// Vista previa de WhatsApp (docs/pantallas.md § 6.8): la misma imagen para todos, con URL absoluta.
+// `site` sale de la URL del sitio en Netlify (astro.config.mjs); en local, del servidor.
+const ogDescription = `${fechaLarga(evento.ceremonia.inicio, { mayuscula: true })} · ${evento.ciudad}`;
+const ogImage = new URL('/vista-previa-whatsapp.jpg', Astro.site ?? Astro.url).href;
 
 // Color de la barra del navegador en el celular: fondo del tema (paper-deep noche / paper marfil).
 const themeColor = theme === 'noche' ? '#0f1522' : '#f7f2e8';
@@ -32,14 +47,24 @@ const themeColor = theme === 'noche' ? '#0f1522' : '#f7f2e8';
 		<meta name="description" content={description} />
 		<meta name="theme-color" content={themeColor} />
 		{noindex && <meta name="robots" content="noindex, nofollow" />}
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
 		<meta property="og:type" content="website" />
 		<meta property="og:locale" content="es_MX" />
-		<meta property="og:title" content={title} />
-		<meta property="og:description" content={description} />
+		<meta property="og:title" content={ogTitle} />
+		<meta property="og:description" content={ogDescription} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:type" content="image/jpeg" />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content={`${nombres} · ${ogDescription}`} />
+		<meta name="twitter:card" content="summary_large_image" />
 
 		<link rel="preload" href={cormorant300} as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href={cormorant400Italic} as="font" type="font/woff2" crossorigin />
+
+		<!-- Marca que hay JS antes del primer pintado: sólo entonces las entradas esperan a que su pantalla llegue a la vista. -->
+		<script is:inline>document.documentElement.classList.add('js');</script>
 	</head>
 	<body>
 		<slot />

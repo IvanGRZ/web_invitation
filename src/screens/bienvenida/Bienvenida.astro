@@ -1,0 +1,102 @@
+---
+// Pantalla 2 · Bienvenida (propuesta B · postal a pantalla completa). CLAUDE.md § 6.1.
+// Tableros del lienzo: BienvenidaPostal (celular 390×844) y BienvenidaD (computadora 1440×900).
+// Paso de la noche de la portada al marfil. Estilos en bienvenida.css; datos de diseño en bienvenida.data.js.
+import Screen from '@/components/patterns/Screen.astro';
+import Sparkles from '@/components/patterns/Sparkles.astro';
+import GlassCard from '@/components/ui/GlassCard.astro';
+import Ornament from '@/components/ui/Ornament.astro';
+import { evento } from '@/config/evento.js';
+import { destellosCelular, destellosComputadora, olas } from './bienvenida.data.js';
+import toledo from './assets/toledo-propuesta.jpg';
+import './bienvenida.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {string} [siguiente] enlace a la siguiente pantalla (el tablero no lleva gesto de desplazamiento)
+ */
+
+const { id, slug, titulo } = /** @type {Props} */ (Astro.props);
+const { el, ella } = evento.novios;
+
+// La foto se sirve tal cual (JPEG de 2000 px, el mismo archivo del lienzo), sin recomprimir:
+// - En celular la foto cubre 580 de alto en un tablero de 390 de ancho, así que se dibuja a ≈ 1031 px del
+//   tablero: con pantallas de densidad 2–3 cualquier celular necesita ≈ 2000 px de ancho. Versiones más
+//   chicas no se usarían.
+// - Recomprimirla (WebP o AVIF, incluso a calidad 90) suaviza la piel y las texturas: comparada contra el
+//   lienzo se nota. Con el JPEG original queda idéntica.
+// Cuando llegue la original de 7767 px, generar con getImage() versiones JPG de 2000 / 2600 / 3200 px a
+// calidad alta y servirlas con srcset.
+---
+
+<Screen
+	id={id}
+	slug={slug}
+	titulo={titulo}
+	theme="marfil"
+	alinear="arriba"
+	class="bienvenida"
+	aria-labelledby="bienvenida-titulo"
+>
+	<Fragment slot="fondo">
+		<div class="bienvenida__foto">
+			<img
+				src={toledo.src}
+				width={toledo.width}
+				height={toledo.height}
+				loading="lazy"
+				decoding="async"
+				alt={`${el.nombre} y ${ella.nombre} en Toledo, con el Alcázar al fondo, el día de la propuesta`}
+				class="bienvenida__imagen"
+			/>
+		</div>
+		<div class="bienvenida__noche" aria-hidden="true"></div>
+		<div class="bienvenida__velo" aria-hidden="true"></div>
+
+		{
+			Object.entries(olas).map(([tamano, ola]) => (
+				<svg class={`bienvenida__ola bienvenida__ola--${tamano}`} viewBox={ola.viewBox} preserveAspectRatio="none" aria-hidden="true">
+					<defs>
+						<linearGradient id={`bienvenida-velo-${tamano}`} x1="0" y1="0" x2="0" y2="1">
+							<stop class="bienvenida__parada" offset="0" stop-opacity="0" />
+							<stop class="bienvenida__parada" offset="1" stop-opacity="0.85" />
+						</linearGradient>
+					</defs>
+					<rect y={ola.velo.y} width={ola.velo.width} height={ola.velo.height} fill={`url(#bienvenida-velo-${tamano})`} />
+					<path class="bienvenida__curva" d={ola.curva} />
+				</svg>
+			))
+		}
+
+		<div class="bienvenida__destellos bienvenida__destellos--celular">
+			<Sparkles frameWidth={390} items={destellosCelular} />
+		</div>
+		<div class="bienvenida__destellos bienvenida__destellos--computadora">
+			<Sparkles frameWidth={1440} items={destellosComputadora} />
+		</div>
+	</Fragment>
+
+	<h2 id="bienvenida-titulo" class="bienvenida__antetitulo">Nuestra historia</h2>
+
+	<div class="bienvenida__placa">
+		<GlassCard class="bienvenida__vidrio">
+			<p class="bienvenida__lugar">Toledo · España</p>
+			<p class="bienvenida__dijo">dijo que sí</p>
+		</GlassCard>
+	</div>
+
+	<!-- Espacios explícitos entre frases: la compresión de HTML de Astro 7 quita los saltos de línea entre elementos en línea. -->
+	<p class="bienvenida__texto">
+		<span class="bienvenida__frase bienvenida__frase--1">El 3 de marzo de 2025 con el Alcázar de testigo,</span>{' '}
+		<span class="bienvenida__frase bienvenida__frase--2">nos prometimos caminar juntos toda la vida.</span>{' '}
+		<span class="bienvenida__frase bienvenida__frase--3">Ahora queremos celebrarlo con&nbsp;ustedes.</span>
+	</p>
+
+	<div class="bienvenida__firma">
+		<Ornament variant="voluta" />
+		<p class="bienvenida__nombres">{el.nombre}{' '}<span class="bienvenida__y">&amp;</span>{' '}{ella.nombre}</p>
+	</div>
+</Screen>

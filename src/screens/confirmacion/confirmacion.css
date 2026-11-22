@@ -1,0 +1,1376 @@
+/* Pantalla aparte · Confirmación (una pregunta por pantalla). docs/pantallas.md § 6.7.
+ * Tableros del lienzo: ConfirmacionD2 (390×844), ConfirmacionEscritorio (1440×900) y ConfEstado-*.
+ *
+ * De día (marfil), sin tarjetas ni cajas. Composición de celular por defecto; de computadora cuando el
+ * contenedor mide ≥ 1024 px de ancho y es horizontal: dos mitades de 480 separadas por un filete dorado.
+ * Todo en coordenadas del tablero con la unidad de diseño --u (styles/screen.css).
+ *   Fondo (.screen__fondo, a sangre): tres manchas de luz que cambian de forma despacio.
+ *   Escenario (el tablero): el formulario (RsvpForm.jsx), con su barra, su línea de avance y el paso.
+ * En celular cada paso es una columna: arriba el cuerpo (antetítulo a la misma altura en todos los pasos)
+ * y abajo las acciones (el botón principal anclado y la fecha límite al pie).
+ * Entrada de cada paso: cada bloque [data-a] sube 14 y aparece, con el retraso de su tamaño (--dc / --dp).
+ *
+ * Valores del lienzo que no son tokens: --cf-*. */
+
+.confirmacion {
+  --bw: 390;
+  --bh: 844;
+
+  --cf-linea: rgba(138, 127, 108, 0.28); /* line-strong al 28 % */
+  --cf-borde-campo: rgba(138, 127, 108, 0.35);
+  --cf-borde-casilla: rgba(138, 127, 108, 0.45);
+  --cf-oro-1: #b8955a;
+  --cf-oro-2: #d9bd85;
+  --cf-oro-claro: #e8cf9c;
+  --cf-oro-filete: rgba(154, 122, 69, 0.35);
+  --cf-oro-filete-fuerte: rgba(154, 122, 69, 0.55);
+  --cf-marfil-silla: rgba(253, 250, 244, 0.7);
+  --cf-sombra-silla: rgba(31, 45, 68, 0.16);
+  --cf-sombra-hoja: rgba(31, 45, 68, 0.08);
+  --cf-sombra-hoja-grande: rgba(31, 45, 68, 0.12);
+  --cf-halo-casilla: rgba(47, 74, 120, 0.12);
+  --cf-subrayado: rgba(47, 74, 120, 0.4);
+  --cf-placeholder: rgba(90, 98, 118, 0.6);
+  --cf-rojo-borde: rgba(155, 59, 47, 0.7);
+  --cf-rojo-fondo: rgba(155, 59, 47, 0.04);
+  --cf-aviso-fondo: rgba(155, 59, 47, 0.06);
+  --cf-aviso-borde: rgba(155, 59, 47, 0.22);
+  --cf-resplandor-1: rgba(226, 207, 166, 0.55);
+  --cf-resplandor-2: rgba(226, 207, 166, 0.18);
+  --cf-resplandor-3: rgba(226, 207, 166, 0);
+  --cf-destello: #e2c48e;
+  --cf-mancha-oro: #e2cfa6;
+  --cf-mancha-azul: #9fb4da;
+  --cf-mancha-rosa: #d9b3b2;
+
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* ─── Fondo: manchas de luz ───────────────────────────────────────── */
+
+.confirmacion__mancha {
+  position: absolute;
+  left: calc(50% + (var(--x) - var(--bw) / 2) * var(--u));
+  top: calc(50% + (var(--y) - var(--bh) / 2) * var(--u));
+  width: calc(var(--s) * var(--u));
+  height: calc(var(--s) * var(--u));
+  border-radius: 50%;
+  background: var(--c);
+  opacity: var(--o);
+  filter: blur(calc(var(--b) * var(--u)));
+  animation: confirmacion-mancha var(--t) ease-in-out var(--r) infinite;
+}
+
+.confirmacion__mancha--1 { --x: 190; --y: -90; --s: 340; --b: 46; --o: 0.5; --c: var(--cf-mancha-oro); --t: 16s; --r: 0s; }
+.confirmacion__mancha--2 { --x: -170; --y: 430; --s: 340; --b: 46; --o: 0.3; --c: var(--cf-mancha-azul); --t: 20s; --r: -7s; }
+.confirmacion__mancha--3 { --x: 240; --y: 674; --s: 280; --b: 46; --o: 0.32; --c: var(--cf-mancha-rosa); --t: 13s; --r: -4s; }
+
+@keyframes confirmacion-mancha {
+  0%,
+  100% {
+    border-radius: 42% 58% 63% 37% / 45% 41% 59% 55%;
+    transform: translate(0, 0) rotate(0);
+  }
+  33% {
+    border-radius: 60% 40% 38% 62% / 57% 62% 38% 43%;
+    transform: translate(calc(14 * var(--u)), calc(-18 * var(--u))) rotate(18deg);
+  }
+  66% {
+    border-radius: 38% 62% 55% 45% / 40% 50% 50% 60%;
+    transform: translate(calc(-12 * var(--u)), calc(10 * var(--u))) rotate(-10deg);
+  }
+}
+
+/* ─── Tablero ─────────────────────────────────────────────────────── */
+
+.confirmacion__isla,
+.confirmacion__tablero {
+  position: absolute;
+  inset: 0;
+}
+
+.confirmacion__tablero {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: calc(20 * var(--u));
+  line-height: calc(31 * var(--u));
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.confirmacion__pc {
+  display: none;
+}
+
+/* Barra superior: "Volver a la invitación" o "Atrás" y "1 de 3". */
+.confirmacion__barra {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: calc(60 * var(--u));
+  padding: 0 calc(24 * var(--u));
+}
+
+.confirmacion__volver,
+.confirmacion__contador {
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(11 * var(--u)));
+  line-height: calc(16 * var(--u));
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.confirmacion__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  min-height: max(44px, calc(44 * var(--u)));
+  margin-left: calc(-6 * var(--u));
+  padding: 0 calc(6 * var(--u));
+  border: 0;
+  background: none;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.confirmacion__volver:hover {
+  color: var(--indigo);
+}
+
+.confirmacion__volver svg {
+  width: calc(15 * var(--u));
+  height: calc(15 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.25s ease;
+}
+
+.confirmacion__volver:hover svg {
+  transform: translateX(-3px);
+}
+
+.confirmacion__contador b {
+  font-weight: 500;
+  color: var(--gold-deep);
+}
+
+/* Línea de avance: 1 px de línea con un relleno dorado de 2 px que crece a 33 / 67 / 100 %. */
+.confirmacion__avance {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  height: calc(1 * var(--u));
+  margin: 0 calc(24 * var(--u));
+  background: var(--cf-linea);
+  transition: opacity 0.6s ease;
+}
+
+.confirmacion__avance i {
+  position: absolute;
+  left: 0;
+  top: calc(-0.5 * var(--u));
+  width: 0;
+  height: calc(2 * var(--u));
+  border-radius: calc(2 * var(--u));
+  background: linear-gradient(90deg, var(--cf-oro-1), var(--cf-oro-2));
+  transition: width 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.confirmacion__avance--p1 i { width: 33.4%; }
+.confirmacion__avance--p2 i { width: 66.7%; }
+.confirmacion__avance--p3 i,
+.confirmacion__avance--p4 i { width: 100%; }
+.confirmacion__avance--p4,
+.confirmacion__avance--oculto { opacity: 0; }
+
+/* ─── Paso (celular): cuerpo arriba, acciones abajo ───────────────── */
+
+.confirmacion__main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.confirmacion__paso {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.confirmacion__columna,
+.confirmacion__botones {
+  display: contents;
+}
+
+.confirmacion__cuerpo {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  /* El antetítulo a la misma altura en todos los pasos: 15 % del alto − 10 por debajo de la barra. */
+  padding: calc(116.6 * var(--u)) calc(28 * var(--u)) calc(20 * var(--u));
+  text-align: center;
+}
+
+.confirmacion--candado .confirmacion__cuerpo,
+.confirmacion--p1 .confirmacion__cuerpo,
+.confirmacion--regreso .confirmacion__cuerpo,
+.confirmacion--cerrada .confirmacion__cuerpo {
+  padding-bottom: 0;
+}
+
+.confirmacion--hecho .confirmacion__cuerpo {
+  justify-content: center;
+  padding: calc(20 * var(--u)) calc(28 * var(--u));
+}
+
+.confirmacion__acciones {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: calc(12 * var(--u));
+  padding: 0 calc(24 * var(--u)) calc(43 * var(--u));
+}
+
+.confirmacion__paso--gracias .confirmacion__acciones {
+  padding-bottom: calc(49 * var(--u));
+}
+
+.confirmacion__paso--sin .confirmacion__acciones {
+  padding-bottom: calc(68 * var(--u));
+}
+
+.confirmacion__espacio {
+  flex: 1 1 0;
+  min-height: calc(14 * var(--u));
+}
+
+/* ─── Textos ──────────────────────────────────────────────────────── */
+
+.confirmacion__ceja {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(12 * var(--u)));
+  line-height: calc(16 * var(--u));
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.confirmacion__ceja--oro {
+  color: var(--gold-deep);
+}
+
+.confirmacion__familia {
+  margin: 0;
+  font-weight: 300;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.confirmacion__familia--paso {
+  margin-top: calc(30 * var(--u));
+  font-size: calc(52 * var(--u));
+  line-height: calc(56 * var(--u));
+}
+
+.confirmacion__pregunta {
+  margin: calc(12 * var(--u)) 0 0;
+  font-size: calc(38 * var(--u));
+  line-height: calc(43 * var(--u));
+  font-weight: 300;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.confirmacion__pregunta--chica {
+  margin: 0 0 calc(12 * var(--u));
+  font-size: calc(31 * var(--u));
+  line-height: calc(36 * var(--u));
+  text-align: center;
+}
+
+.confirmacion__pregunta:focus,
+.confirmacion__gracias:focus {
+  outline: none;
+}
+
+.confirmacion__ayuda {
+  margin: calc(10 * var(--u)) 0 0;
+  font-size: max(17px, calc(19 * var(--u)));
+  line-height: calc(26 * var(--u));
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-muted);
+  text-wrap: balance;
+}
+
+.confirmacion__etiqueta-pase,
+.confirmacion__etiqueta-cuenta {
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(14 * var(--u)));
+  line-height: calc(20 * var(--u));
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--ink-muted);
+}
+
+.confirmacion__texto {
+  margin: calc(6 * var(--u)) 0 0;
+  max-width: calc(300 * var(--u));
+  font-size: max(17px, calc(20 * var(--u)));
+  line-height: calc(31 * var(--u));
+  text-wrap: balance;
+}
+
+.confirmacion__nota {
+  margin: 0;
+  font-size: max(14px, calc(16 * var(--u)));
+  line-height: calc(22 * var(--u));
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-muted);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.confirmacion__nota--cerrada {
+  margin-top: calc(4 * var(--u));
+}
+
+/* ─── Botones ─────────────────────────────────────────────────────── */
+
+.confirmacion .btn {
+  --btn-height: max(44px, calc(52 * var(--u)));
+  --btn-font-size: max(10px, calc(13 * var(--u)));
+  --btn-padding-x: calc(32 * var(--u));
+}
+
+/* Apagado hasta que se puede seguir (sin sillas ocupadas, código incompleto).
+ * !important: la entrada del paso deja opacity: 1 fija y una animación pisa las declaraciones normales. */
+.confirmacion .btn:disabled {
+  opacity: 0.45 !important;
+  cursor: default;
+  pointer-events: none;
+}
+
+.confirmacion .btn[aria-busy='true'] {
+  cursor: progress;
+}
+
+.confirmacion .btn--link {
+  min-height: max(44px, calc(44 * var(--u)));
+  padding: 0 calc(8 * var(--u));
+}
+
+.confirmacion__cambiar {
+  align-self: center;
+}
+
+/* ─── Fecha límite con su hoja de calendario ──────────────────────── */
+
+.confirmacion__limite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(14 * var(--u));
+  margin-top: calc(18 * var(--u));
+  text-align: left;
+}
+
+.confirmacion__acciones .confirmacion__limite {
+  margin-top: calc(31 * var(--u));
+}
+
+.confirmacion__hoja {
+  flex: none;
+  width: calc(44 * var(--u));
+  height: calc(56 * var(--u));
+  overflow: visible;
+  filter: drop-shadow(0 calc(3 * var(--u)) calc(6 * var(--u)) var(--cf-sombra-hoja));
+}
+
+.confirmacion__hoja-mes {
+  font-family: var(--font-sans);
+  font-size: 6.6px;
+  font-weight: 500;
+  letter-spacing: 1.9px;
+  fill: var(--indigo);
+}
+
+.confirmacion__hoja-dia {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  font-weight: 400;
+  font-variant-numeric: lining-nums;
+  fill: var(--indigo);
+}
+
+.confirmacion__limite-texto {
+  display: flex;
+  flex-direction: column;
+  gap: calc(3 * var(--u));
+}
+
+.confirmacion__limite-clave {
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(11 * var(--u)));
+  line-height: calc(14 * var(--u));
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--indigo);
+}
+
+.confirmacion__limite-fecha {
+  font-size: max(17px, calc(21 * var(--u)));
+  line-height: calc(25 * var(--u));
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* ─── Pase: sillitas ──────────────────────────────────────────────── */
+
+.confirmacion__pase-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(12 * var(--u));
+}
+
+.confirmacion__sillitas {
+  display: flex;
+  gap: calc(6 * var(--u));
+}
+
+.confirmacion__sillitas svg {
+  display: block;
+  width: calc(var(--sw) * var(--u));
+  height: calc(var(--sh) * var(--u));
+}
+
+.confirmacion__sillitas .bk {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: var(--st);
+}
+
+.confirmacion__sillitas .fr {
+  stroke: var(--gold);
+  stroke-width: var(--st);
+}
+
+.confirmacion__sillitas .is-on .bk {
+  fill: var(--indigo);
+  stroke: var(--indigo);
+}
+
+.confirmacion__sillitas .is-on .fr {
+  stroke: var(--indigo);
+}
+
+.confirmacion__sillitas--paso { --sw: 24; --sh: 38; --st: 2.2; gap: calc(10 * var(--u)); }
+.confirmacion__sillitas--pase { --sw: 28; --sh: 45; --st: 2; gap: calc(12 * var(--u)); }
+.confirmacion__sillitas--resumen { --sw: 16; --sh: 26; --st: 3; }
+
+.confirmacion__sillitas--pase .bk,
+.confirmacion__sillitas--pase .fr {
+  transition: fill 0.35s ease, stroke 0.35s ease;
+}
+
+/* ─── Sillas grandes ──────────────────────────────────────────────── */
+
+.confirmacion__sillas {
+  --sw: 62;
+  --sh: 99;
+  --gap: 16;
+  display: flex;
+  justify-content: center;
+  gap: calc(var(--gap) * var(--u));
+}
+
+.confirmacion__sillas--l5 { --sw: 52; --sh: 83; --gap: 12; }
+.confirmacion__sillas--l6 { --sw: 46; --sh: 74; --gap: 10; }
+
+.confirmacion__silla {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  min-width: max(44px, calc(var(--sw) * var(--u)));
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.confirmacion__sillas--fijas .confirmacion__silla {
+  cursor: default;
+}
+
+.confirmacion__silla svg {
+  display: block;
+  width: calc(var(--sw) * var(--u));
+  height: calc(var(--sh) * var(--u));
+  overflow: visible;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.confirmacion__sombra {
+  display: block;
+  width: calc(44 * var(--u));
+  height: calc(7 * var(--u));
+  margin-top: calc(-8 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--cf-sombra-silla), transparent);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.45s ease;
+}
+
+.confirmacion__silla .bk {
+  fill: var(--cf-marfil-silla);
+  stroke: var(--gold);
+  transition: fill 0.35s ease, stroke 0.35s ease;
+}
+
+.confirmacion__silla .in,
+.confirmacion__silla .fr {
+  stroke: var(--gold);
+  transition: stroke 0.35s ease;
+}
+
+.confirmacion__etiqueta {
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(12 * var(--u)));
+  line-height: calc(20 * var(--u));
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  transition: color 0.35s ease;
+}
+
+.confirmacion__sillas--l5 .confirmacion__etiqueta,
+.confirmacion__sillas--l6 .confirmacion__etiqueta {
+  font-size: max(10px, calc(11 * var(--u)));
+  letter-spacing: 0.04em;
+}
+
+/* La cascada: cada silla espera su turno (--dl, 70 ms entre una y otra). */
+.confirmacion__silla svg,
+.confirmacion__sombra,
+.confirmacion__silla .bk,
+.confirmacion__silla .in,
+.confirmacion__silla .fr,
+.confirmacion__etiqueta {
+  transition-delay: var(--dl, 0s);
+}
+
+.confirmacion__silla.is-on svg {
+  transform: translateY(calc(-6 * var(--u)));
+}
+
+.confirmacion__silla.is-on .confirmacion__sombra {
+  transform: scaleX(0.78);
+  opacity: 0.7;
+}
+
+.confirmacion__silla.is-on .bk {
+  fill: var(--indigo);
+  stroke: var(--indigo);
+}
+
+.confirmacion__silla.is-on .in {
+  stroke: var(--cf-oro-claro);
+}
+
+.confirmacion__silla.is-on .fr {
+  stroke: var(--indigo);
+}
+
+.confirmacion__silla.is-on .confirmacion__etiqueta {
+  color: var(--indigo);
+}
+
+.confirmacion__silla:focus-visible svg {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 6px;
+  border-radius: 8px;
+}
+
+/* Contador que gira: el número entra desde abajo al cambiar. */
+.confirmacion__cuenta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+  margin-top: calc(30 * var(--u));
+}
+
+.confirmacion__odometro {
+  position: relative;
+  display: inline-block;
+  width: calc(30 * var(--u));
+  height: calc(58 * var(--u));
+  overflow: hidden;
+}
+
+.confirmacion__odometro span {
+  position: absolute;
+  inset: 0 0 auto;
+  text-align: center;
+  font-size: calc(58 * var(--u));
+  line-height: calc(58 * var(--u));
+  font-weight: 300;
+  font-variant-numeric: lining-nums;
+  color: var(--gold-deep);
+  opacity: 0;
+  transform: translateY(55%);
+  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.confirmacion__odometro span.on {
+  opacity: 1;
+  transform: none;
+}
+
+/* ─── Mensaje ─────────────────────────────────────────────────────── */
+
+.confirmacion__campo {
+  display: block;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: calc(168 * var(--u));
+  max-height: calc(240 * var(--u));
+  margin: calc(28 * var(--u)) 0 calc(34 * var(--u));
+  padding: calc(16 * var(--u)) calc(18 * var(--u));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--cf-borde-campo);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  backdrop-filter: blur(var(--blur-glass));
+  resize: none;
+  text-align: left;
+  font-family: var(--font-serif);
+  font-size: max(17px, calc(19 * var(--u)));
+  line-height: calc(28 * var(--u));
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.confirmacion__campo::placeholder {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--cf-placeholder);
+  opacity: 1;
+}
+
+/* ─── Gracias / los extrañaremos ──────────────────────────────────── */
+
+.confirmacion__resplandor {
+  position: absolute;
+  left: 50%;
+  top: 36%;
+  width: calc(520 * var(--u));
+  height: calc(520 * var(--u));
+  margin: calc(-260 * var(--u)) 0 0 calc(-260 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--cf-resplandor-1) 0%, var(--cf-resplandor-2) 38%, var(--cf-resplandor-3) 68%);
+  pointer-events: none;
+  animation: confirmacion-resplandor 1.6s ease both;
+}
+
+@keyframes confirmacion-resplandor {
+  from {
+    opacity: 0;
+  }
+}
+
+.confirmacion__destello {
+  position: absolute;
+  left: var(--xc);
+  bottom: 34%;
+  width: calc(var(--s) * var(--u));
+  height: calc(var(--s) * var(--u));
+  border-radius: 50%;
+  background: var(--cf-destello);
+  opacity: 0;
+  filter: blur(0.6px);
+  pointer-events: none;
+  animation: confirmacion-destello 3.4s cubic-bezier(0.2, 0.7, 0.2, 1) var(--d) forwards;
+}
+
+@keyframes confirmacion-destello {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(-230 * var(--u))) scale(1);
+  }
+}
+
+.confirmacion__gracias {
+  margin: 0;
+  padding: 0 0.25em;
+  font-family: var(--font-script);
+  font-size: calc(68 * var(--u));
+  line-height: calc(84 * var(--u));
+  font-weight: 400;
+  color: var(--rose-deep);
+  /* Se escribe sola. */
+  animation: confirmacion-escribe 1.8s cubic-bezier(0.45, 0, 0.2, 1) both;
+}
+
+.confirmacion__gracias--larga {
+  font-size: calc(48 * var(--u));
+  line-height: calc(66 * var(--u));
+}
+
+@keyframes confirmacion-escribe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.confirmacion__resumen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+  min-width: calc(220 * var(--u));
+  margin-top: calc(22 * var(--u));
+  padding-top: calc(20 * var(--u));
+  border-top: 1px solid var(--cf-oro-filete);
+}
+
+/* ─── Candado: el código de la invitación ─────────────────────────── */
+
+.confirmacion__codigo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+  margin-top: calc(34 * var(--u));
+}
+
+.confirmacion__codigo-grupo {
+  display: flex;
+  gap: calc(6 * var(--u));
+}
+
+.confirmacion__casilla {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(34 * var(--u));
+  height: calc(48 * var(--u));
+  border-radius: calc(10 * var(--u));
+  border: 1px solid var(--cf-borde-casilla);
+  background: var(--glass);
+  font-size: calc(26 * var(--u));
+  line-height: 1;
+  font-weight: 500;
+  font-variant-numeric: lining-nums;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* La casilla activa (borde índigo, halo y cursor) sólo mientras el campo real tiene el foco:
+ * al salir del campo no queda un cursor dibujado que no escribe. Es también el indicador de foco. */
+.confirmacion__codigo:focus-within .confirmacion__casilla.is-now {
+  border-color: var(--indigo);
+  box-shadow: 0 0 0 calc(3 * var(--u)) var(--cf-halo-casilla);
+}
+
+.confirmacion__codigo:focus-within .confirmacion__casilla.is-now::after {
+  content: '';
+  width: calc(1.5 * var(--u));
+  height: calc(24 * var(--u));
+  background: var(--indigo);
+  animation: confirmacion-cursor 1s steps(1) infinite;
+}
+
+@keyframes confirmacion-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+
+.confirmacion__codigo-guion {
+  width: calc(12 * var(--u));
+  height: calc(1.5 * var(--u));
+  border-radius: calc(1 * var(--u));
+  background: var(--gold);
+}
+
+/* Un solo <input> real encima de las casillas: pegar y borrar funcionan; las casillas sólo lo pintan. */
+.confirmacion__codigo-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 16px; /* sin zoom automático en iOS */
+  opacity: 0;
+  cursor: text;
+}
+
+.confirmacion__codigo.is-bad .confirmacion__casilla {
+  border-color: var(--cf-rojo-borde);
+  background: var(--cf-rojo-fondo);
+}
+
+/* Sacudida corta. En el tablero llega 1 s después de la entrada; al escribir un código, en seguida. */
+.confirmacion__codigo.is-bad {
+  animation: confirmacion-sacude 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) 1s both;
+}
+
+.confirmacion__codigo.is-bad.is-ahora {
+  animation-delay: 0s;
+}
+
+@keyframes confirmacion-sacude {
+  10%,
+  90% {
+    translate: -1px 0;
+  }
+  20%,
+  80% {
+    translate: 2px 0;
+  }
+  30%,
+  50%,
+  70% {
+    translate: -4px 0;
+  }
+  40%,
+  60% {
+    translate: 4px 0;
+  }
+}
+
+.confirmacion__alerta,
+.confirmacion__aviso {
+  font-family: var(--font-sans);
+  font-size: calc(14 * var(--u));
+  line-height: calc(20 * var(--u));
+  color: var(--danger);
+  text-align: left;
+}
+
+.confirmacion__alerta {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: calc(8 * var(--u));
+  max-width: calc(310 * var(--u));
+  margin: calc(16 * var(--u)) auto 0;
+}
+
+.confirmacion__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(10 * var(--u));
+  padding: calc(12 * var(--u)) calc(14 * var(--u));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--cf-aviso-borde);
+  background: var(--cf-aviso-fondo);
+}
+
+.confirmacion__alerta-icono {
+  flex: none;
+  width: calc(16 * var(--u));
+  height: calc(16 * var(--u));
+  margin-top: calc(2 * var(--u));
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  stroke-linecap: round;
+}
+
+.confirmacion__pide {
+  margin: calc(2 * var(--u)) 0 0;
+  text-align: center;
+  font-size: max(17px, calc(17 * var(--u)));
+  line-height: calc(24 * var(--u));
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-muted);
+}
+
+.confirmacion__pide a {
+  display: inline-block;
+  padding: max(10px, calc(10 * var(--u))) 0;
+  color: var(--indigo);
+  text-decoration: underline;
+  text-decoration-color: var(--cf-subrayado);
+  text-underline-offset: 4px;
+}
+
+/* ─── Regreso y cerrada ───────────────────────────────────────────── */
+
+.confirmacion__etiqueta-regreso {
+  margin: calc(16 * var(--u)) 0 0;
+}
+
+.confirmacion__cita {
+  max-width: calc(300 * var(--u));
+  margin: calc(22 * var(--u)) auto 0;
+  padding-top: calc(18 * var(--u));
+  border-top: 1px solid var(--cf-oro-filete);
+  font-size: max(17px, calc(19 * var(--u)));
+  line-height: calc(27 * var(--u));
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-muted);
+  text-wrap: balance;
+}
+
+.confirmacion__hoja-grande {
+  display: block;
+  width: calc(84 * var(--u));
+  height: calc(107 * var(--u));
+  margin: 0 auto;
+  overflow: visible;
+  filter: drop-shadow(0 calc(8 * var(--u)) calc(16 * var(--u)) var(--cf-sombra-hoja-grande));
+}
+
+.confirmacion__suma {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+  margin-top: calc(22 * var(--u));
+}
+
+/* ─── Sin JS: una sola página con la misma información ────────────── */
+
+.js .confirmacion__sinjs,
+html:not(.js) .confirmacion__isla--viva {
+  display: none;
+}
+
+.confirmacion__sinjs {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(16 * var(--u));
+  padding: calc(48 * var(--u)) calc(24 * var(--u));
+  text-align: center;
+}
+
+.confirmacion__sinjs form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(16 * var(--u));
+  width: 100%;
+}
+
+.confirmacion__sinjs fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8 * var(--u));
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.confirmacion__sinjs legend {
+  margin-bottom: calc(8 * var(--u));
+  font-size: max(17px, calc(26 * var(--u)));
+  line-height: 1.2;
+  font-weight: 300;
+}
+
+.confirmacion__sinjs label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(8 * var(--u));
+  min-height: 44px;
+  font-size: max(17px, calc(19 * var(--u)));
+}
+
+.confirmacion__sinjs input[type='radio'] {
+  accent-color: var(--indigo);
+}
+
+.confirmacion__sinjs select,
+.confirmacion__sinjs input[type='text'] {
+  min-height: 44px;
+  padding: 0 calc(12 * var(--u));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--cf-borde-campo);
+  background: var(--glass);
+  font: inherit;
+  color: var(--ink);
+}
+
+.confirmacion__sinjs .confirmacion__campo {
+  flex: none;
+  margin: 0;
+}
+
+/* ─── Entrada de cada paso ────────────────────────────────────────── */
+
+.confirmacion [data-a='cel'],
+.confirmacion [data-a='ambos'] {
+  animation: confirmacion-entra 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--dc) both;
+}
+
+/* `translate` (no `transform`) para no pisar el "sube 2 px" de los botones al pasar el cursor. */
+@keyframes confirmacion-entra {
+  from {
+    opacity: 0;
+    translate: 0 calc(14 * var(--u));
+  }
+  to {
+    opacity: 1;
+    translate: none;
+  }
+}
+
+/* ─── Computadora (1440 × 900) ────────────────────────────────────── */
+
+@container recorrido (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .confirmacion {
+    --bw: 1440;
+    --bh: 900;
+  }
+
+  .confirmacion__mancha--1 { --x: 960; --y: -200; --s: 640; --b: 60; --o: 0.45; }
+  .confirmacion__mancha--2 { --x: -240; --y: 420; --s: 620; --b: 60; --o: 0.26; }
+  .confirmacion__mancha--3 { --x: 760; --y: 660; --s: 560; --b: 60; --o: 0.28; }
+
+  .confirmacion .confirmacion__cel {
+    display: none;
+  }
+
+  .confirmacion__barra {
+    height: calc(76 * var(--u));
+    padding: 0 calc(64 * var(--u));
+  }
+
+  .confirmacion__volver,
+  .confirmacion__contador {
+    font-size: max(10px, calc(12 * var(--u)));
+  }
+
+  .confirmacion__avance {
+    margin: 0 calc(64 * var(--u));
+  }
+
+  /* Dos mitades de 480 separadas por un filete dorado de 440 al centro, con 88 de aire a cada lado. */
+  .confirmacion__main {
+    z-index: 1;
+    display: grid;
+    grid-template-columns: calc(480 * var(--u)) calc(1 * var(--u)) calc(480 * var(--u));
+    column-gap: calc(88 * var(--u));
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    padding: 0 calc(64 * var(--u)) calc(24 * var(--u));
+  }
+
+  /* Izquierda: el pase, fijo en todos los pasos. */
+  .confirmacion .confirmacion__pase {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .confirmacion__familia,
+  .confirmacion__nombres {
+    margin: calc(30 * var(--u)) 0 0;
+    font-size: calc(66 * var(--u));
+    line-height: calc(70 * var(--u));
+    font-weight: 300;
+  }
+
+  .confirmacion__nombres i {
+    font-size: calc(46 * var(--u));
+    font-weight: 400;
+    color: var(--gold);
+  }
+
+  .confirmacion__pase .confirmacion__fecha-boda {
+    margin-top: calc(14 * var(--u));
+  }
+
+  .confirmacion__pase-sillas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(14 * var(--u));
+    margin-top: calc(40 * var(--u));
+  }
+
+  .confirmacion__pase-limite {
+    margin-top: calc(64 * var(--u));
+  }
+
+  .confirmacion__pase-limite .confirmacion__limite {
+    margin-top: 0;
+    transform: scale(1.08);
+    transition: opacity 0.6s ease;
+  }
+
+  /* La fecha se desvanece al confirmar. */
+  .confirmacion__pase-limite.is-gone .confirmacion__limite {
+    opacity: 0;
+  }
+
+  .confirmacion .confirmacion__filete {
+    display: block;
+    width: calc(1 * var(--u));
+    height: calc(440 * var(--u));
+    background: linear-gradient(180deg, transparent, var(--cf-oro-filete-fuerte) 20%, var(--cf-oro-filete-fuerte) 80%, transparent);
+  }
+
+  /* Derecha: el paso, en una sola columna centrada. */
+  .confirmacion__paso {
+    position: relative;
+    inset: auto;
+    min-height: calc(520 * var(--u));
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .confirmacion__columna {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  .confirmacion__cuerpo,
+  .confirmacion__acciones {
+    display: contents;
+  }
+
+  .confirmacion__botones {
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--u));
+    width: calc(380 * var(--u));
+    margin-top: calc(40 * var(--u));
+  }
+
+  .confirmacion__pregunta,
+  .confirmacion__pregunta--chica {
+    margin: 0;
+    font-size: calc(46 * var(--u));
+    line-height: calc(52 * var(--u));
+  }
+
+  .confirmacion__ayuda {
+    margin-top: calc(12 * var(--u));
+    font-size: max(17px, calc(20 * var(--u)));
+    line-height: calc(28 * var(--u));
+    text-wrap: wrap;
+  }
+
+  .confirmacion__bloque,
+  .confirmacion__codigo-caja {
+    width: 100%;
+  }
+
+  .confirmacion__sillas {
+    --sw: 72;
+    --sh: 115;
+    --gap: 22;
+    margin-top: calc(44 * var(--u));
+  }
+
+  .confirmacion__sillas--l5 { --sw: 66; --sh: 106; --gap: 16; }
+  .confirmacion__sillas--l6 { --sw: 60; --sh: 96; --gap: 14; }
+
+  .confirmacion__campo {
+    flex: none;
+    width: calc(480 * var(--u));
+    min-height: calc(200 * var(--u));
+    max-height: none;
+    margin: calc(32 * var(--u)) 0 0;
+  }
+
+  .confirmacion__gracias {
+    font-size: calc(84 * var(--u));
+    line-height: calc(100 * var(--u));
+  }
+
+  .confirmacion__gracias--larga {
+    font-size: calc(64 * var(--u));
+    line-height: calc(84 * var(--u));
+  }
+
+  .confirmacion__resplandor {
+    top: 42%;
+  }
+
+  .confirmacion__destello {
+    left: var(--xp);
+    bottom: 30%;
+  }
+
+  .confirmacion__texto {
+    max-width: calc(380 * var(--u));
+  }
+
+  /* En el tablero es un <p> con margen inferior de 1em (14). */
+  .confirmacion__resumen {
+    min-width: 0;
+    margin-top: calc(18 * var(--u));
+    margin-bottom: calc(14 * var(--u));
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .confirmacion--hecho .confirmacion__nota {
+    margin: calc(44 * var(--u)) 0 0;
+    font-size: max(14px, calc(17 * var(--u)));
+    line-height: calc(24 * var(--u));
+  }
+
+  .confirmacion--hecho .confirmacion__cambiar {
+    margin-top: calc(6 * var(--u));
+  }
+
+  .confirmacion__codigo {
+    gap: calc(14 * var(--u));
+    margin-top: calc(40 * var(--u));
+  }
+
+  .confirmacion__codigo-grupo {
+    gap: calc(8 * var(--u));
+  }
+
+  .confirmacion__casilla {
+    width: calc(44 * var(--u));
+    height: calc(60 * var(--u));
+    border-radius: calc(12 * var(--u));
+    font-size: calc(32 * var(--u));
+  }
+
+  .confirmacion__codigo:focus-within .confirmacion__casilla.is-now::after {
+    height: calc(30 * var(--u));
+  }
+
+  .confirmacion__alerta {
+    max-width: calc(420 * var(--u));
+  }
+
+  .confirmacion__aviso {
+    margin-bottom: calc(4 * var(--u));
+  }
+
+  .confirmacion__cita {
+    max-width: calc(400 * var(--u));
+    font-size: max(17px, calc(21 * var(--u)));
+    line-height: calc(30 * var(--u));
+  }
+
+  .confirmacion__nota--cerrada {
+    margin-top: calc(10 * var(--u));
+  }
+
+  /* Cerrada: la hoja grande va arriba de la pregunta. */
+  .confirmacion__bloque--cerrada {
+    display: contents;
+  }
+
+  .confirmacion__hoja-grande {
+    order: -1;
+  }
+
+  .confirmacion--cerrada .confirmacion__pregunta {
+    margin-top: calc(30 * var(--u));
+  }
+
+  .confirmacion [data-a='cel'] {
+    animation: none;
+  }
+
+  .confirmacion [data-a='pc'],
+  .confirmacion [data-a='ambos'] {
+    animation: confirmacion-entra 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--dp) both;
+  }
+}
+
+/* ─── Movimiento reducido: todo visible y quieto ──────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .confirmacion [data-a],
+  .confirmacion__mancha,
+  .confirmacion__gracias,
+  .confirmacion__resplandor,
+  .confirmacion__codigo.is-bad,
+  .confirmacion__casilla.is-now::after {
+    animation: none !important;
+  }
+
+  .confirmacion__destello {
+    display: none;
+  }
+
+  .confirmacion__avance,
+  .confirmacion__avance i,
+  .confirmacion__odometro span,
+  .confirmacion__silla svg,
+  .confirmacion__sombra,
+  .confirmacion__silla .bk,
+  .confirmacion__silla .in,
+  .confirmacion__silla .fr,
+  .confirmacion__etiqueta,
+  .confirmacion__volver svg {
+    transition: none;
+  }
+}

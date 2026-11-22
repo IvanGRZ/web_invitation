@@ -1,0 +1,516 @@
+/* Pantalla 7 · Cierre (El sello). Tableros del lienzo: CierreSello (390×844) y CierreEscritorio (1440×900).
+ *
+ * Composición de celular por defecto; de computadora cuando el recorrido mide ≥ 1024 px de ancho y es
+ * horizontal. Todo en coordenadas del tablero con la unidad de diseño --u (styles/screen.css).
+ *   Fondo (.screen__fondo, a sangre): cielo, halo índigo, luz dorada que respira y estrellas.
+ *   Escenario (el tablero): textos, sobre con el sello (el enlace a la confirmación), frente impreso y luz marfil.
+ * Al romper el sello, cierre.js pone .is-open en .cierre__escena y corren las transiciones del lienzo.
+ *
+ * Valores del lienzo que no son tokens: --ci-*. */
+
+.cierre {
+  --bw: 390;
+  --bh: 844;
+
+  --ci-marfil: #f7f2e8;
+  --ci-marfil-76: rgba(247, 242, 232, 0.76);
+  --ci-cielo-1: #0f1522;
+  --ci-cielo-2: #121a29;
+  --ci-cielo-3: #141d2d;
+  --ci-halo: rgba(47, 74, 120, 0.42);
+  --ci-luz-oro: rgba(201, 168, 110, 0.13);
+  --ci-luz-sobre: rgba(201, 168, 110, 0.1);
+  --ci-dorado-claro: rgba(232, 207, 156, 0.7);
+  --ci-estrella: #fbefd2;
+  --ci-estrella-halo: rgba(246, 227, 180, 0.6);
+  --ci-sombra-sobre: rgba(4, 6, 12, 0.55);
+  --ci-sombra-frente: rgba(4, 6, 12, 0.6);
+
+  background: var(--ci-cielo-1);
+  color: var(--ci-marfil);
+}
+
+/* ─── Fondo ───────────────────────────────────────────────────────── */
+
+.cierre__cielo,
+.cierre__estrellas {
+  position: absolute;
+  inset: 0;
+}
+
+.cierre__cielo {
+  background: linear-gradient(180deg, var(--ci-cielo-1) 0%, var(--ci-cielo-2) 50%, var(--ci-cielo-3) 100%);
+}
+
+.cierre__luz {
+  position: absolute;
+  left: calc(50% + (var(--x) - var(--bw) / 2) * var(--u));
+  top: calc(50% + (var(--y) - var(--bh) / 2) * var(--u));
+  width: calc(var(--s) * var(--u));
+  height: calc(var(--s) * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--c) 0%, transparent 70%);
+}
+
+.cierre__luz--indigo {
+  --x: -150;
+  --y: 420;
+  --s: 420;
+  --c: var(--ci-halo);
+}
+
+.cierre__luz--oro {
+  --x: 160; /* right −170, 400 de ancho */
+  --y: 100;
+  --s: 400;
+  --c: var(--ci-luz-oro);
+
+  animation: ci-respira 6s ease-in-out infinite;
+}
+
+/* Resplandor dorado detrás del sobre: sólo en computadora. */
+.cierre__luz--sobre {
+  display: none;
+}
+
+.cierre__estrellas--computadora {
+  display: none;
+}
+
+.cierre__estrella {
+  position: absolute;
+  left: calc(50% + (var(--x) - var(--bw) / 2) * var(--u));
+  top: calc(50% + (var(--y) - var(--bh) / 2) * var(--u));
+  width: calc(var(--s) * var(--u));
+  height: calc(var(--s) * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--ci-estrella) 0%, var(--ci-estrella-halo) 40%, transparent 72%);
+  opacity: 0;
+  animation: ci-titila var(--t) ease-in-out var(--d) infinite;
+}
+
+/* ─── Escena ──────────────────────────────────────────────────────── */
+
+.cierre__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.cierre__escena,
+.cierre__desvanece {
+  position: absolute;
+  inset: 0;
+}
+
+.cierre__desvanece {
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+
+.cierre__antetitulo,
+.cierre__titulo,
+.cierre__instruccion,
+.cierre__toca,
+.cierre__limite {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+}
+
+.cierre__antetitulo,
+.cierre__toca {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  line-height: normal; /* como el lienzo */
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.cierre__antetitulo {
+  top: calc(150 * var(--u));
+  font-size: max(10px, calc(12 * var(--u)));
+  letter-spacing: 0.3em;
+  color: var(--gold);
+  opacity: 0;
+  animation: ci-suave 1.2s ease 0.1s forwards;
+}
+
+.cierre__titulo {
+  left: calc(30 * var(--u));
+  right: calc(30 * var(--u));
+  top: calc(176 * var(--u));
+  font-family: var(--font-serif);
+  font-weight: 300;
+  font-size: calc(42 * var(--u));
+  line-height: calc(46 * var(--u));
+  color: var(--ci-marfil);
+  text-wrap: balance;
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  animation: ci-sube 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 0.35s forwards;
+}
+
+.cierre__instruccion,
+.cierre__limite {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ci-marfil-76);
+}
+
+.cierre__instruccion {
+  left: calc(30 * var(--u));
+  right: calc(30 * var(--u));
+  top: calc(290 * var(--u));
+  font-size: max(17px, calc(19 * var(--u)));
+  line-height: calc(26 * var(--u));
+  opacity: 0;
+  animation: ci-suave 1.2s ease 0.7s forwards;
+}
+
+.cierre__toca {
+  top: calc(602 * var(--u));
+  font-size: max(10px, calc(10 * var(--u)));
+  letter-spacing: 0.24em;
+  color: var(--ci-dorado-claro);
+  opacity: 0;
+  animation: ci-suave 1.2s ease 1.9s forwards;
+}
+
+.cierre__limite {
+  top: calc(636 * var(--u));
+  font-size: max(17px, calc(17 * var(--u)));
+  line-height: calc(22 * var(--u));
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  animation: ci-sube 1s cubic-bezier(0.2, 0.7, 0.2, 1) 2.6s forwards;
+}
+
+/* ─── Sobre ───────────────────────────────────────────────────────── */
+
+.cierre__sobre {
+  position: absolute;
+  left: calc(45 * var(--u));
+  top: calc(360 * var(--u));
+  width: calc(300 * var(--u));
+  height: calc(210 * var(--u));
+  opacity: 0;
+  transform: translateY(calc(16 * var(--u)));
+  animation: ci-sube 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 1.1s forwards;
+}
+
+.cierre__reverso {
+  position: absolute;
+  inset: 0;
+  transition:
+    opacity 0.5s ease,
+    transform 0.6s ease;
+}
+
+.cierre__reverso svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 calc(24 * var(--u)) calc(34 * var(--u)) var(--ci-sombra-sobre));
+}
+
+.cierre__variante {
+  display: block;
+}
+
+.cierre__variante--computadora {
+  display: none;
+}
+
+.cierre__solapa-inferior {
+  filter: drop-shadow(0 -2px 3px rgba(10, 16, 30, 0.3));
+}
+
+.cierre__solapa-superior {
+  filter: drop-shadow(0 3px 4px rgba(10, 16, 30, 0.4));
+}
+
+/* El sello: enlace real a la confirmación (círculo para que el foco siga su forma). */
+.cierre__sello {
+  position: absolute;
+  left: calc(108 * var(--u));
+  top: calc(73 * var(--u));
+  width: max(44px, calc(84 * var(--u)));
+  aspect-ratio: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.35s ease,
+    opacity 0.35s ease 0.1s;
+}
+
+.cierre__halo {
+  position: absolute;
+  inset: calc(2 * var(--u));
+  border-radius: 50%;
+  border: 1px solid var(--ci-dorado-claro);
+  animation: ci-halo 2.6s ease-out infinite;
+}
+
+.cierre__sello svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 calc(3 * var(--u)) calc(4 * var(--u)) rgba(5, 8, 15, 0.55));
+}
+
+/* ─── Frente impreso y luz marfil (sólo al romper el sello) ──────── */
+
+.cierre__frente {
+  position: absolute;
+  z-index: 5;
+  left: calc(45 * var(--u));
+  top: calc(212 * var(--u));
+  width: calc(300 * var(--u));
+  height: calc(420 * var(--u));
+  max-width: none;
+  box-shadow: 0 calc(30 * var(--u)) calc(60 * var(--u)) var(--ci-sombra-frente);
+  opacity: 0;
+  transform: translateY(calc(90 * var(--u))) scale(0.5);
+  pointer-events: none;
+  transition:
+    opacity 0.5s ease 0.25s,
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) 0.25s;
+}
+
+/* Crece desde el sello hasta cubrir la pantalla; cierre.js ajusta --ci-luz-escala si la pantalla es
+ * más grande que lo que cubre la escala del lienzo (48). */
+.cierre__marfil {
+  position: absolute;
+  z-index: 6;
+  left: calc(175 * var(--u));
+  top: calc(402 * var(--u));
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
+  border-radius: 50%;
+  background: var(--ci-marfil);
+  transform: scale(0);
+  pointer-events: none;
+  transition: transform 1s cubic-bezier(0.7, 0, 0.2, 1) 1.9s;
+}
+
+.cierre__escena.is-open .cierre__desvanece {
+  opacity: 0.12;
+}
+
+.cierre__escena.is-open .cierre__reverso {
+  opacity: 0.18;
+  transform: translateY(calc(14 * var(--u)));
+}
+
+.cierre__escena.is-open .cierre__sello {
+  transform: scale(1.12);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cierre__escena.is-open .cierre__frente {
+  opacity: 1;
+  transform: none;
+}
+
+.cierre__escena.is-open .cierre__marfil {
+  transform: scale(var(--ci-luz-escala, 48));
+}
+
+/* ─── Computadora (tablero 1440×900) ──────────────────────────────── */
+
+@container recorrido (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .cierre {
+    --bw: 1440;
+    --bh: 900;
+  }
+
+  .cierre__luz--indigo {
+    --x: -240;
+    --y: 420;
+    --s: 760;
+  }
+
+  .cierre__luz--oro {
+    --x: 980; /* right −260, 720 de ancho */
+    --y: 40;
+    --s: 720;
+  }
+
+  .cierre__luz--sobre {
+    --x: 340; /* 760 centrados en 1440 */
+    --y: 316;
+
+    display: block;
+    width: calc(760 * var(--u));
+    height: calc(460 * var(--u));
+    background: radial-gradient(closest-side, var(--ci-luz-sobre), transparent);
+  }
+
+  .cierre__estrellas--celular {
+    display: none;
+  }
+
+  .cierre__estrellas--computadora {
+    display: block;
+  }
+
+  .cierre__antetitulo {
+    top: calc(156 * var(--u));
+  }
+
+  .cierre__titulo {
+    left: 0;
+    right: 0;
+    top: calc(184 * var(--u));
+    font-size: calc(58 * var(--u));
+    line-height: calc(62 * var(--u));
+    text-wrap: wrap;
+  }
+
+  .cierre__instruccion {
+    left: 0;
+    right: 0;
+    top: calc(264 * var(--u));
+    font-size: max(17px, calc(23 * var(--u)));
+    line-height: calc(30 * var(--u));
+  }
+
+  .cierre__sobre {
+    left: calc(510 * var(--u));
+    top: calc(346 * var(--u));
+    width: calc(420 * var(--u));
+    height: calc(294 * var(--u));
+  }
+
+
+  .cierre__variante--celular {
+    display: none;
+  }
+
+  .cierre__variante--computadora {
+    display: block;
+  }
+
+  .cierre__sello {
+    left: calc(154 * var(--u));
+    top: calc(104 * var(--u));
+    width: max(44px, calc(112 * var(--u)));
+  }
+
+  .cierre__halo {
+    inset: calc(3 * var(--u));
+  }
+
+  .cierre__toca {
+    top: calc(680 * var(--u));
+    font-size: max(10px, calc(11 * var(--u)));
+  }
+
+  .cierre__limite {
+    top: calc(716 * var(--u));
+    font-size: max(17px, calc(19 * var(--u)));
+    line-height: calc(24 * var(--u));
+  }
+
+  .cierre__frente {
+    left: calc(492 * var(--u));
+    top: calc(130 * var(--u));
+    width: calc(457 * var(--u));
+    height: calc(640 * var(--u));
+    box-shadow: 0 calc(40 * var(--u)) calc(80 * var(--u)) var(--ci-sombra-frente);
+  }
+
+  .cierre__marfil {
+    left: calc(700 * var(--u));
+    top: calc(430 * var(--u));
+  }
+}
+
+/* ─── Movimiento (la pantalla entra una vez, al llegar a la vista) ──── */
+
+@keyframes ci-suave {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ci-sube {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ci-respira {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ci-halo {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes ci-titila {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  45%,
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Movimiento reducido: todo visible y quieto; el sello es un enlace directo (cierre.js no lo intercepta). */
+@media (prefers-reduced-motion: reduce) {
+  .cierre__luz--oro,
+  .cierre__halo {
+    animation: none;
+  }
+
+  .cierre__estrella {
+    animation: none;
+    opacity: 0.8;
+  }
+
+  .cierre__antetitulo,
+  .cierre__titulo,
+  .cierre__instruccion,
+  .cierre__toca,
+  .cierre__limite,
+  .cierre__sobre {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .cierre__desvanece,
+  .cierre__reverso,
+  .cierre__sello,
+  .cierre__frente,
+  .cierre__marfil {
+    transition: none;
+  }
+}

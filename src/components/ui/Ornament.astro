@@ -1,0 +1,45 @@
+---
+// Ornamentos dorados del sistema. Toman el color de --gold (o de currentColor si se ajusta --ornament-color).
+// `voluta`: la voluta de la bienvenida y del itinerario (trazos exactos del lienzo). Mide 120 px del tablero;
+// --ornament-width (en px del tablero, sin unidad) cambia el ancho y el alto sigue la proporción 300:24;
+// --ornament-height fija la caja cuando el tablero la redondea (el dibujo queda centrado).
+
+/**
+ * @typedef {Object} Props
+ * @property {'voluta'} [variant]
+ * @property {string} [class]
+ */
+
+const { variant = 'voluta', class: className } = /** @type {Props} */ (Astro.props);
+---
+
+{
+	variant === 'voluta' && (
+		<svg class:list={['ornament', 'ornament--voluta', className]} viewBox="0 0 300 24" width="120" height="10" aria-hidden="true">
+			<path d="M140 12C124 3 108 3 98 12C90 19 79 19 76 12C74 7 80 4 84 9" />
+			<path d="M160 12C176 3 192 3 202 12C210 19 221 19 224 12C226 7 220 4 216 9" />
+			<path class="ornament__relleno" d="M150 6l5 6-5 6-5-6z" />
+		</svg>
+	)
+}
+
+<style>
+	.ornament {
+		display: block;
+		color: var(--ornament-color, var(--gold));
+	}
+
+	.ornament--voluta {
+		width: calc(var(--ornament-width, 120) * var(--u, 1px));
+		height: var(--ornament-height, auto);
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.4;
+		stroke-linecap: round;
+	}
+
+	.ornament__relleno {
+		fill: currentColor;
+		stroke: none;
+	}
+</style>

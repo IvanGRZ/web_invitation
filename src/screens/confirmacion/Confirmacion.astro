@@ -1,0 +1,152 @@
+---
+// Pantalla aparte · Confirmación (una pregunta por pantalla). docs/pantallas.md § 6.7.
+// Tableros del lienzo: ConfirmacionD2 (celular 390×844), ConfirmacionEscritorio (computadora 1440×900)
+// y ConfEstado-* (candado, código inválido, error al guardar, regreso, cerrada).
+// Estilos en confirmacion.css; datos de diseño en confirmacion.data.js; pasos y estados en RsvpForm.jsx.
+//
+// De día (marfil), fuera del recorrido: llegan aquí el botón de la portada y el sello del cierre.
+// `estado` dice con qué abre:
+//   candado   la invitación general (sin código): pide el código de la invitación
+//   pasos     la familia todavía no responde: ¿Nos acompañarán? → ¿Quiénes vendrán? → mensaje → gracias
+//   regreso   la familia ya respondió: muestra su respuesta y "Cambiar mi respuesta"
+//   cerrada   pasó la fecha límite: sin formulario
+// Sin JS, la isla se oculta y queda una sola página con el mismo formulario (o el campo del código).
+import Screen from '@/components/patterns/Screen.astro';
+import Button from '@/components/ui/Button.astro';
+import RsvpForm from './RsvpForm.jsx';
+import { evento } from '@/config/evento.js';
+import { fechaLarga, hojaDeCalendario } from '@/lib/fechas.js';
+import { MENSAJE_MAX } from './confirmacion.data.js';
+import './confirmacion.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {'candado' | 'pasos' | 'regreso' | 'cerrada'} estado
+ * @property {string} volver dirección de la invitación ("Volver a la invitación")
+ * @property {string} destinoCodigo dirección a la que lleva un código, con "{codigo}" (candado)
+ * @property {string} [familia] p. ej. "Familia García"
+ * @property {number} [lugares] lugares del pase (1–6)
+ * @property {{ asiste: boolean, invitados: number, mensaje?: string, recibida: string } | null} [respuesta]
+ * @property {string} [accion] action del formulario (la Action de Astro, cuando exista)
+ * @property {Object} [simular] sólo páginas de muestra: resultados sin backend (ver RsvpForm.jsx)
+ * @property {Object} [inicio] sólo páginas de muestra: estado con el que abre (ver RsvpForm.jsx)
+ */
+
+const {
+	id,
+	slug,
+	titulo,
+	estado,
+	volver,
+	destinoCodigo,
+	familia = '',
+	lugares = 1,
+	respuesta = null,
+	accion,
+	simular,
+	inicio,
+} = /** @type {Props} */ (Astro.props);
+
+const limite = {
+	...hojaDeCalendario(evento.fechaLimiteRsvp),
+	fecha: fechaLarga(evento.fechaLimiteRsvp, { mayuscula: true }),
+	nota: fechaLarga(evento.fechaLimiteRsvp, { diaSemana: false }),
+	frase: fechaLarga(evento.fechaLimiteRsvp),
+};
+const novios = {
+	el: evento.novios.el.nombre,
+	ella: evento.novios.ella.nombre,
+	fecha: fechaLarga(evento.ceremonia.inicio, { mayuscula: true }),
+};
+const whatsapp = `https://wa.me/${evento.whatsapp ?? ''}`;
+const recibida = respuesta ? fechaLarga(respuesta.recibida, { diaSemana: false }) : '';
+
+const props = { estado, familia, lugares, limite, novios, respuesta, recibida, volver, whatsapp, accion, destinoCodigo, simular, inicio };
+// La cerrada no tiene nada que tocar: se pinta en el servidor sin cargar React.
+const viva = estado !== 'cerrada';
+const lugaresSinJs = Array.from({ length: lugares }, (_, i) => i + 1);
+---
+
+<Screen id={id} slug={slug} titulo={titulo} theme="marfil" class="confirmacion">
+	<Fragment slot="fondo">
+		<div class="confirmacion__mancha confirmacion__mancha--1" aria-hidden="true"></div>
+		<div class="confirmacion__mancha confirmacion__mancha--2" aria-hidden="true"></div>
+		<div class="confirmacion__mancha confirmacion__mancha--3" aria-hidden="true"></div>
+	</Fragment>
+
+	<div class:list={['confirmacion__isla', { 'confirmacion__isla--viva': viva }]}>
+		{viva ? <RsvpForm client:load {...props} /> : <RsvpForm {...props} />}
+	</div>
+
+	{
+		viva && (
+			<div class="confirmacion__sinjs">
+				<a class="confirmacion__volver" href={volver}>
+					Volver a la invitación
+				</a>
+				<p class="confirmacion__ceja confirmacion__ceja--oro">Confirma tu asistencia</p>
+				{estado === 'candado' ? (
+					<form method="get">
+						<label for="confirmacion-codigo-sinjs">¿Cuál es el código de tu invitación?</label>
+						<input
+							id="confirmacion-codigo-sinjs"
+							type="text"
+							name="codigo"
+							inputmode="text"
+							autocapitalize="characters"
+							autocomplete="off"
+							maxlength="9"
+							required
+						/>
+						<Button type="submit" block>
+							Entrar a mi invitación
+						</Button>
+					</form>
+				) : (
+					<form method="post" action={accion}>
+						<p class="confirmacion__familia confirmacion__familia--paso">{familia}</p>
+						<fieldset>
+							<legend>¿Nos acompañarán?</legend>
+							<label>
+								<input type="radio" name="attending" value="true" checked={respuesta?.asiste !== false} /> Sí, con mucho gusto
+							</label>
+							<label>
+								<input type="radio" name="attending" value="false" checked={respuesta?.asiste === false} /> No podremos asistir
+							</label>
+						</fieldset>
+						<fieldset>
+							<legend>¿Quiénes vendrán?</legend>
+							<label>
+								<select name="guests">
+									{lugaresSinJs.map((k) => (
+										<option value={k} selected={k === (respuesta?.asiste ? respuesta.invitados : lugares)}>
+											{k}
+										</option>
+									))}
+								</select>
+								de {lugares} {lugares === 1 ? 'lugar' : 'lugares'}
+							</label>
+						</fieldset>
+						<fieldset>
+							<legend>Un mensaje para nosotros</legend>
+							<textarea
+								class="confirmacion__campo"
+								name="message"
+								aria-label="Un mensaje para nosotros (opcional)"
+								placeholder="Escríbenos algo bonito…"
+								maxlength={MENSAJE_MAX}
+							>{respuesta?.mensaje ?? ''}</textarea>
+						</fieldset>
+						<Button type="submit" block>
+							Confirmar asistencia
+						</Button>
+					</form>
+				)}
+				<p class="confirmacion__nota">Confirma a más tardar el {limite.nota}.</p>
+			</div>
+		)
+	}
+</Screen>

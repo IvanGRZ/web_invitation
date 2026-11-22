@@ -1,0 +1,86 @@
+---
+// Pantalla 4 · Itinerario de la fiesta (propuesta D · programa que anochece). docs/pantallas.md § 6.3.
+// Tableros del lienzo: ItinerarioD (celular 390×670) e ItinerarioEscritorio (computadora 1440×900).
+// Estilos en itinerario.css; datos de diseño en itinerario.data.js; el programa sale de config/evento.js.
+//
+// Una carta marfil sólida (programa impreso) sobre un cielo que anochece: mientras caen los horarios, dos
+// capas fijas del fondo suben de opacidad (atardecer y luego noche) y al final titilan las estrellas.
+import Screen from '@/components/patterns/Screen.astro';
+import Ornament from '@/components/ui/Ornament.astro';
+import { evento } from '@/config/evento.js';
+import { horaReloj } from '@/lib/fechas.js';
+import { estrellas, iconos, tiempos } from './itinerario.data.js';
+import './itinerario.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (lo da screens/index.js)
+ * @property {string} slug segmento de su ruta (lo da screens/index.js)
+ * @property {string} titulo título de la pestaña (lo da screens/index.js)
+ * @property {string} [siguiente] enlace a la siguiente pantalla (el tablero no lleva gesto de desplazamiento)
+ */
+
+const { id, slug, titulo } = /** @type {Props} */ (Astro.props);
+
+const renglones = evento.itinerario.map((paso, i) => ({
+	...paso,
+	hora: horaReloj(paso.inicio),
+	trazos: iconos[paso.clave],
+	// Retraso de su caída (s); el icono y la línea de puntos se calculan en el CSS a partir de él.
+	retraso: (tiempos.primerRenglon + i * tiempos.entreRenglones).toFixed(2),
+}));
+
+/** @param {number[]} estrella */
+const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}s;--t:${t}s`;
+---
+
+<Screen id={id} slug={slug} titulo={titulo} theme="marfil" class="itinerario" aria-labelledby="itinerario-titulo">
+	<Fragment slot="fondo">
+		<div class="itinerario__papel" aria-hidden="true"></div>
+		<div class="itinerario__luz itinerario__luz--oro" aria-hidden="true"></div>
+		<div class="itinerario__luz itinerario__luz--rosa" aria-hidden="true"></div>
+		<div class="itinerario__cielo itinerario__cielo--atardecer" aria-hidden="true"></div>
+		<div class="itinerario__cielo itinerario__cielo--noche" aria-hidden="true"></div>
+		{
+			Object.entries(estrellas).map(([tamano, lista]) => (
+				<div class={`itinerario__estrellas itinerario__estrellas--${tamano}`} aria-hidden="true">
+					{lista.map((e) => (
+						<span class="itinerario__estrella" style={estiloEstrella(e)} />
+					))}
+				</div>
+			))
+		}
+	</Fragment>
+
+	<article class="itinerario__carta">
+		<div class="itinerario__marco" aria-hidden="true"></div>
+		<div class="itinerario__contenido">
+			<Ornament variant="voluta" class="itinerario__voluta" />
+			<p class="itinerario__antetitulo">Programa de la noche</p>
+			<h2 id="itinerario-titulo" class="itinerario__titulo">la fiesta</h2>
+
+			<ol class="itinerario__programa">
+				{
+					renglones.map((r) => (
+						<li class="itinerario__renglon" style={`--r:${r.retraso}s`}>
+							<span class="itinerario__icono">
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									{r.trazos.map((d) => (
+										<path class="itinerario__trazo" pathLength="1" d={d} />
+									))}
+								</svg>
+							</span>
+							<span class="itinerario__momento">{r.momento}</span>
+							<span class="itinerario__puntos" aria-hidden="true" />
+							<time class="itinerario__hora" datetime={r.inicio}>
+								{r.hora}
+							</time>
+						</li>
+					))
+				}
+			</ol>
+
+			<Ornament variant="voluta" class="itinerario__voluta itinerario__voluta--pie" />
+		</div>
+	</article>
+</Screen>

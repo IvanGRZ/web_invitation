@@ -1,0 +1,39 @@
+---
+// Invitación general: una dirección por pantalla (`/portada`, `/bienvenida`, …), como páginas.
+// Todas sirven el mismo recorrido y abren directo en su pantalla; al bajar, la barra del navegador
+// cambia de dirección y "Atrás" regresa a la pantalla anterior (scripts/pantallas.js).
+// `/` abre la primera pantalla (la barra muestra `/portada`).
+// El orden y las rutas viven en src/screens/index.js; esta página sólo los arma.
+import Recorrido from '@/layouts/Recorrido.astro';
+import { pantallas, enlaceDe, tituloDe, confirmacionDe, galeriaBodaDe } from '@/screens/index.js';
+
+export function getStaticPaths() {
+	return [
+		{ params: { pantalla: undefined } },
+		...pantallas.map((pantalla) => ({ params: { pantalla: pantalla.slug } })),
+	];
+}
+
+const base = '';
+const inicial = pantallas.find((pantalla) => pantalla.slug === Astro.params.pantalla) ?? pantallas[0];
+const description = 'Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara';
+---
+
+<Recorrido title={tituloDe(inicial)} description={description} base={base} inicial={inicial.slug}>
+	{
+		pantallas.map((pantalla, i) => {
+			const { Componente } = pantalla;
+			const siguiente = pantallas[i + 1];
+			return (
+				<Componente
+					id={pantalla.id}
+					slug={pantalla.slug}
+					titulo={tituloDe(pantalla)}
+					siguiente={siguiente ? enlaceDe(base, siguiente) : undefined}
+					confirmar={confirmacionDe(base)}
+					galeriaBoda={galeriaBodaDe(base)}
+				/>
+			);
+		})
+	}
+</Recorrido>

@@ -1,0 +1,47 @@
+---
+// Una pantalla del recorrido: ocupa exactamente la pantalla visible y se detiene ahí al hacer scroll.
+// Estructura y unidad de diseño en styles/screen.css. Su dirección y el título de la pestaña
+// los usa scripts/pantallas.js para que la barra del navegador muestre en qué pantalla estás.
+//
+// Slots:
+//   fondo    capas a sangre (fotos, degradados, olas, destellos)
+//   default  contenido del tablero, colocado en coordenadas del tablero con calc(N * var(--u))
+import '@/styles/screen.css';
+
+/**
+ * @typedef {Object} Props
+ * @property {string} id ancla de la pantalla (p. ej. "bienvenida")
+ * @property {string} slug segmento de su ruta ('' = la ruta base del recorrido)
+ * @property {string} titulo título de la pestaña mientras se ve esta pantalla
+ * @property {'marfil' | 'noche'} [theme]
+ * @property {'centro' | 'arriba'} [alinear] cómo se acomoda el tablero si sobra alto o ancho
+ * @property {string} [class]
+ */
+
+const {
+	id,
+	slug,
+	titulo,
+	theme = 'marfil',
+	alinear = 'centro',
+	class: className,
+	...rest
+} = /** @type {Props & Record<string, unknown>} */ (Astro.props);
+---
+
+<section
+	id={id}
+	class:list={['screen', `screen--${alinear}`, className]}
+	data-screen
+	data-slug={slug}
+	data-titulo={titulo}
+	data-theme={theme}
+	{...rest}
+>
+	<div class="screen__fondo">
+		<slot name="fondo" />
+	</div>
+	<div class="screen__escenario">
+		<slot />
+	</div>
+</section>

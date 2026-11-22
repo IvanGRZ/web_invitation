@@ -1,0 +1,34 @@
+---
+// Galería de la boda con el enlace general (`/galeria-de-la-boda`): sin código, las fotos suben sin nombre y no
+// aparece "Compartiendo como". La personalizada (`/i/<codigo>/galeria-de-la-boda`) llega con el backend.
+// Bajo demanda (SSR): su estado depende de la hora de la visita (antes de abrir, abierta o cerrada) y la cuenta de
+// "cuánto falta" sale bien desde el primer pintado, aun sin JS. Nunca en caché: cambia con la hora y con las fotos.
+// Es una página aparte del recorrido, de noche: Recorrido con una sola pantalla.
+import Recorrido from '@/layouts/Recorrido.astro';
+import { enlaceDe, galeriaBoda, historiasDe, pantallas, tituloDe } from '@/screens/index.js';
+import { estadoGaleria, fotosCompartidas } from '@/screens/galeria-boda/galeria-boda.js';
+
+export const prerender = false;
+
+const base = '';
+const ahora = Date.now();
+const estado = estadoGaleria(ahora);
+const { total } = await fotosCompartidas();
+const galeria = pantallas.find((p) => p.slug === 'galeria') ?? pantallas[0];
+const { Componente } = galeriaBoda;
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<Recorrido title={tituloDe(galeriaBoda)} description="Ivan y Emma · las fotos de la noche" base={base} inicial={galeriaBoda.slug}>
+	<Componente
+		id={galeriaBoda.id}
+		slug={galeriaBoda.slug}
+		titulo={tituloDe(galeriaBoda)}
+		estado={estado}
+		volver={enlaceDe(base, galeria)}
+		historias={historiasDe(base)}
+		total={total}
+		ahora={ahora}
+	/>
+</Recorrido>

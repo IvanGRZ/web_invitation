@@ -1,0 +1,367 @@
+/* Pantalla 2 · Bienvenida. Tableros del lienzo: BienvenidaPostal (390×844) y BienvenidaD (1440×900).
+ *
+ * Composición de celular por defecto; de computadora cuando el recorrido mide ≥ 1024 px de ancho y es
+ * horizontal. Todo en coordenadas del tablero con la unidad de diseño --u (styles/screen.css), así la
+ * pantalla completa cabe siempre en una sola vista.
+ *   Fondo (.screen__fondo, a sangre): foto, degradado de noche, ola, destellos. Alturas en --u.
+ *   Escenario (el tablero): antetítulo, placa, texto, firma, velo.
+ * El tablero va arriba (alinear="arriba") para que la foto siempre empiece pegada a la portada.
+ *
+ * Valores del lienzo que no son tokens del tema marfil: --bv-*. */
+
+.bienvenida {
+  --bw: 390;
+  --bh: 844;
+
+  --bv-noche: #0f1522;
+  --bv-oro-noche: #c9a86e;
+  --bv-marfil: #f7f2e8;
+  --bv-marfil-texto: #f3ecdf;
+
+  /* Unión con la portada: los 2 px de arriba ya son noche, así nunca asoma el marfil entre las dos
+   * pantallas cuando el alto de la pantalla no es un número entero de pixeles. */
+  background: linear-gradient(var(--bv-noche) 0 2px, var(--paper) 2px);
+}
+
+/* ─── Fondo ───────────────────────────────────────────────────────── */
+
+/* La foto aparece con un fundido desde la noche de la portada (no desde el marfil): al pasar de una pantalla
+ * a otra la noche continúa y nunca se ve un bloque claro mientras la foto todavía no termina de aparecer. */
+.bienvenida__foto {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(580 * var(--u));
+  overflow: hidden;
+  background: var(--bv-noche);
+}
+
+/* Fundido de la foto con fill-mode `backwards` (no `forwards`): al terminar, la animación deja de aplicar y la
+ * foto se pinta normal. Con `forwards` la imagen se queda en una capa de composición que la GPU escala con un
+ * filtrado más pobre y la foto se ve más suave que en el lienzo (verificado al comparar). */
+.bienvenida__imagen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: 74% 40%;
+  animation: bv-foto 2.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s backwards;
+}
+
+.bienvenida__noche {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: calc(150 * var(--u));
+  background: linear-gradient(180deg, var(--bv-noche) 0%, rgba(15, 21, 34, 0.55) 40%, rgba(15, 21, 34, 0) 100%);
+}
+
+/* La ola baja 2 px del tablero por debajo de la foto: su borde inferior cae sobre el marfil de la
+ * pantalla y no deja asomar ninguna línea de la foto. */
+.bienvenida__ola {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.bienvenida__ola--celular {
+  top: calc(430 * var(--u));
+  height: calc(152 * var(--u));
+}
+
+.bienvenida__ola--computadora {
+  display: none;
+  top: calc(520 * var(--u));
+  height: calc(142 * var(--u));
+}
+
+.bienvenida__parada {
+  stop-color: var(--paper);
+}
+
+.bienvenida__curva {
+  fill: var(--paper);
+}
+
+.bienvenida__destellos {
+  position: absolute;
+  inset: 0;
+}
+
+.bienvenida__destellos--computadora {
+  display: none;
+}
+
+.bienvenida__velo {
+  display: none;
+}
+
+/* ─── Escenario (tablero) ─────────────────────────────────────────── */
+
+.bienvenida__antetitulo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(54 * var(--u));
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(12 * var(--u)));
+  line-height: normal; /* como el lienzo */
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--bv-oro-noche);
+  opacity: 0;
+  animation: bv-aparece 1.3s ease 0.1s forwards;
+}
+
+.bienvenida__placa {
+  position: absolute;
+  left: calc(28 * var(--u));
+  right: calc(28 * var(--u));
+  top: calc(372 * var(--u));
+}
+
+.bienvenida__vidrio {
+  --glass-card-bg: rgba(247, 242, 232, 0.14);
+  --glass-card-border: rgba(247, 242, 232, 0.28);
+  --glass-card-radius: calc(24 * var(--u));
+  --glass-card-blur: calc(16 * var(--u));
+
+  padding: calc(16 * var(--u)) calc(20 * var(--u)) calc(14 * var(--u));
+  text-align: center;
+  color: var(--bv-marfil);
+  opacity: 0;
+  transform: translateY(calc(14 * var(--u)));
+  animation: bv-placa 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) 1.5s forwards;
+}
+
+.bienvenida__lugar {
+  font-family: var(--font-sans);
+  font-size: max(10px, calc(11 * var(--u)));
+  line-height: normal; /* como el lienzo */
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--bv-marfil-texto);
+}
+
+.bienvenida__dijo {
+  margin-top: calc(2 * var(--u));
+  font-family: var(--font-script);
+  font-weight: 400;
+  font-size: calc(46 * var(--u));
+  line-height: 1.2174; /* 56 / 46 */
+  color: var(--bv-marfil);
+  text-shadow: 0 calc(2 * var(--u)) calc(18 * var(--u)) rgba(15, 21, 34, 0.45);
+  clip-path: inset(0 100% 0 0);
+  animation: bv-escribe 1.8s cubic-bezier(0.45, 0, 0.2, 1) 2.2s forwards;
+}
+
+.bienvenida__texto {
+  position: absolute;
+  left: calc(36 * var(--u));
+  right: calc(36 * var(--u));
+  top: calc(596 * var(--u));
+  text-align: center;
+  font-family: var(--font-serif);
+  font-size: max(17px, calc(20 * var(--u)));
+  line-height: 1.4; /* 28 / 20 */
+  font-weight: 500;
+  text-wrap: balance;
+  color: var(--ink);
+}
+
+.bienvenida__frase {
+  opacity: 0;
+  animation: bv-aparece 1.3s ease forwards;
+}
+
+.bienvenida__frase--1 {
+  animation-delay: 3.1s;
+}
+
+.bienvenida__frase--2 {
+  animation-delay: 3.9s;
+}
+
+.bienvenida__frase--3 {
+  animation-delay: 4.7s;
+}
+
+.bienvenida__firma {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(740 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  opacity: 0;
+  animation: bv-aparece 1.3s ease 5.5s forwards;
+}
+
+.bienvenida__nombres {
+  font-family: var(--font-serif);
+  font-size: max(17px, calc(22 * var(--u)));
+  line-height: normal; /* como el lienzo */
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.bienvenida__y {
+  color: var(--gold);
+}
+
+/* ─── Computadora (tablero 1440×900) ──────────────────────────────── */
+
+@container recorrido (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .bienvenida {
+    --bw: 1440;
+    --bh: 900;
+  }
+
+  .bienvenida__foto {
+    height: calc(660 * var(--u));
+  }
+
+  .bienvenida__imagen {
+    object-position: 50% 30%;
+  }
+
+  .bienvenida__noche {
+    height: calc(170 * var(--u));
+    background: linear-gradient(180deg, var(--bv-noche) 0%, rgba(15, 21, 34, 0.55) 45%, rgba(15, 21, 34, 0) 100%);
+  }
+
+  .bienvenida__ola--celular,
+  .bienvenida__destellos--celular {
+    display: none;
+  }
+
+  .bienvenida__ola--computadora,
+  .bienvenida__destellos--computadora {
+    display: block;
+  }
+
+  /* Velo oscuro muy suave detrás de la placa para leerla. En el tablero es un degradado radial en una caja
+   * de 760×660 pegada a la orilla izquierda (70% 60% at 25% 55%: radios 532×396, centro en 190, 363).
+   * Va a sangre desde la orilla de la pantalla y su centro sigue a la placa (50% − 720 + 190 del tablero),
+   * así nunca deja un borde recto cuando la pantalla es más ancha que el tablero. */
+  .bienvenida__velo {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: calc(660 * var(--u));
+    background: radial-gradient(
+      calc(532 * var(--u)) calc(396 * var(--u)) at calc(50% - 530 * var(--u)) calc(363 * var(--u)),
+      rgba(15, 21, 34, 0.28) 0%,
+      rgba(15, 21, 34, 0) 70%
+    );
+  }
+
+  .bienvenida__antetitulo {
+    top: calc(48 * var(--u));
+    font-size: max(10px, calc(13 * var(--u)));
+  }
+
+  .bienvenida__placa {
+    left: calc(150 * var(--u));
+    right: auto;
+    top: calc(300 * var(--u));
+    width: calc(420 * var(--u));
+  }
+
+  .bienvenida__vidrio {
+    --glass-card-border: rgba(247, 242, 232, 0.3);
+    --glass-card-radius: calc(28 * var(--u));
+
+    padding: calc(22 * var(--u)) calc(28 * var(--u)) calc(16 * var(--u));
+    box-shadow: 0 calc(16 * var(--u)) calc(40 * var(--u)) rgba(15, 21, 34, 0.22);
+  }
+
+  .bienvenida__lugar {
+    font-size: max(10px, calc(12 * var(--u)));
+  }
+
+  .bienvenida__dijo {
+    margin-top: calc(4 * var(--u));
+    font-size: calc(66 * var(--u));
+    line-height: 1.2121; /* 80 / 66 */
+    text-shadow: 0 calc(2 * var(--u)) calc(22 * var(--u)) rgba(15, 21, 34, 0.45);
+  }
+
+  .bienvenida__texto {
+    left: calc(400 * var(--u)); /* 640 px centrados en 1440 */
+    right: calc(400 * var(--u));
+    top: calc(678 * var(--u));
+    font-size: max(17px, calc(24 * var(--u)));
+    line-height: 1.4167; /* 34 / 24 */
+  }
+
+  .bienvenida__firma {
+    top: calc(800 * var(--u));
+  }
+
+  .bienvenida__nombres {
+    font-size: max(17px, calc(24 * var(--u)));
+  }
+}
+
+/* ─── Movimiento (la pantalla entra una vez, al llegar a la vista) ──── */
+
+@keyframes bv-aparece {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bv-foto {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bv-placa {
+  from {
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    -webkit-backdrop-filter: blur(var(--glass-card-blur));
+    backdrop-filter: blur(var(--glass-card-blur));
+  }
+}
+
+@keyframes bv-escribe {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bienvenida__imagen,
+  .bienvenida__antetitulo,
+  .bienvenida__vidrio,
+  .bienvenida__dijo,
+  .bienvenida__frase,
+  .bienvenida__firma {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    clip-path: none;
+  }
+}

@@ -23,3 +23,10 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 .idea/
+
+# herramientas locales de Claude Code (rutas de esta máquina)
+.claude/launch.json
+
+# revisión visual: tableros del lienzo (diseño privado) y capturas
+tools/qa/.ref/
+tools/qa/salida/

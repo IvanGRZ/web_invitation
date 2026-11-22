@@ -1,0 +1,31 @@
+---
+// Muestras de las historias con las seis fotos del lienzo, SÓLO en desarrollo (en el build no se genera ninguna):
+//   /prueba/<estado>/galeria-de-la-boda/historias
+//     historias   con el nombre de quien la compartió (como en el lienzo)
+//     general     fotos subidas sin código: sólo "nuestra noche" y la hora
+//     muchas      40 fotos: la ventana de 30 barras que se recorre con la actual
+import Recorrido from '@/layouts/Recorrido.astro';
+import { historias, tituloDe } from '@/screens/index.js';
+import { muestra } from '@/screens/galeria-boda/galeria-boda.data.js';
+// La foto real del lienzo (la misma de la galería), servida tal cual, sin recomprimir.
+import toledo from '@/screens/galeria/assets/toledo-propuesta.jpg?url';
+
+export function getStaticPaths() {
+	if (import.meta.env.PROD) return [];
+	const fotos = muestra.historias.map((f, i) => (i === 0 ? { ...f, src: toledo, miniatura: toledo } : f));
+	const muchas = Array.from({ length: 40 }, (_, k) => ({ ...fotos[k % fotos.length], id: `m${k + 1}` }));
+	return [
+		{ params: { estado: 'historias' }, props: { fotos, total: muestra.total } },
+		{ params: { estado: 'general' }, props: { fotos: fotos.map((f) => ({ ...f, familia: null })), total: muestra.total } },
+		{ params: { estado: 'muchas' }, props: { fotos: muchas, total: muchas.length } },
+	];
+}
+
+const base = `/prueba/${Astro.params.estado}`;
+const { Componente } = historias;
+const { fotos, total } = Astro.props;
+---
+
+<Recorrido title={tituloDe(historias)} description="Muestra de desarrollo" base={base} inicial={historias.slug} noindex>
+	<Componente id={historias.id} slug={historias.slug} titulo={tituloDe(historias)} fotos={fotos} total={total} volver="/prueba/reposo/galeria-de-la-boda" />
+</Recorrido>

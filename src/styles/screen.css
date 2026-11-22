@@ -1,0 +1,84 @@
+/* Pantalla del recorrido (components/patterns/Screen.astro).
+ *
+ * Cada pantalla ocupa exactamente el alto del recorrido y se detiene ahí al hacer scroll (scroll-snap).
+ *
+ * Unidad de diseño --u: un pixel del tablero de diseño, escalado para que el tablero completo quepa
+ * en la pantalla (como "contain"). Las medidas del tablero se escriben como calc(N * var(--u)).
+ *   --bw / --bh: ancho y alto del tablero. Cada pantalla declara los suyos en su CSS
+ *   (celular 390×844 por defecto; computadora, p. ej., 1440×900 dentro de su @container).
+ * cqw / cqh se resuelven contra el contenedor `recorrido` (layouts/Recorrido.astro), que mide
+ * exactamente la pantalla visible sin contar la barra de scroll.
+ *
+ * Capas:
+ *   .screen__fondo      a sangre, llena toda la pantalla (fotos, degradados, olas, destellos)
+ *   .screen__escenario  el tablero escalado, centrado; el contenido se coloca en coordenadas del tablero
+ */
+
+.screen {
+  --u: min(100cqw / var(--bw, 390), 100cqh / var(--bh, 844));
+
+  position: relative;
+  height: 100cqh;
+  overflow: clip;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.screen__fondo {
+  position: absolute;
+  inset: 0;
+}
+
+.screen__escenario {
+  position: absolute;
+  left: 50%;
+  width: calc(var(--bw, 390) * var(--u));
+  height: calc(var(--bh, 844) * var(--u));
+}
+
+.screen--centro .screen__escenario {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.screen--arriba .screen__escenario {
+  top: 0;
+  transform: translateX(-50%);
+}
+
+/* Salida: mientras una pantalla se va hacia arriba, su contenido sube un poco más rápido que el fondo
+ * (paralaje), para que el cambio se sienta como pasar de página y no como un documento que corre.
+ * Animación ligada al scroll (mejora progresiva: sin soporte no pasa nada).
+ * OJO: sólo `translate`. Animar `opacity` (o filter, mask, clip-path) en este contenedor lo convierte en
+ * "backdrop root" y los vidrios de adentro dejan de desenfocar lo que hay detrás (placa, medallón, cuenta). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .screen__escenario {
+      animation: screen-salida linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+
+    /* La salida corre aunque la pantalla esté en pausa por la regla de entrada de abajo
+     * (selector más específico que esa regla). */
+    .js [data-screen] > .screen__escenario.screen__escenario {
+      animation-play-state: running !important;
+    }
+  }
+}
+
+@keyframes screen-salida {
+  to {
+    translate: 0 calc(-64 * var(--u));
+  }
+}
+
+/* Entrada de cada pantalla: sus animaciones esperan en pausa hasta que la pantalla está activa
+ * (scripts/pantallas.js). Los keyframes declaran su estado inicial o el elemento parte oculto,
+ * así que en pausa se ve el primer cuadro. Sin JS no hay clase .js y todo corre y queda visible. */
+.js [data-screen]:not(.is-active),
+.js [data-screen]:not(.is-active) * {
+  animation-play-state: paused !important;
+}
