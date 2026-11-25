@@ -1,0 +1,41 @@
+---
+// Invitación personalizada de una familia (`/i/<codigo>`, `/i/<codigo>/portada`, …): el mismo recorrido que la
+// general con base '/i/<codigo>'. La portada no se personaliza; el pase sólo aparece en la confirmación.
+// Bajo demanda (SSR): el código va en la ruta y no se conoce en el build. Un código que no existe → 404.
+// "Compartir mis fotos" lleva a la galería de la boda general mientras no exista la personalizada
+// (/i/<codigo>/galeria-de-la-boda llega con su backend).
+import Recorrido from '@/layouts/Recorrido.astro';
+import { pantallas, enlaceDe, tituloDe, confirmacionDe, galeriaBodaDe } from '@/screens/index.js';
+import { cargarInvitacion } from './_invitacion.js';
+
+export const prerender = false;
+
+const inicial = Astro.params.pantalla ? pantallas.find((pantalla) => pantalla.slug === Astro.params.pantalla) : pantallas[0];
+if (!inicial) return Astro.rewrite('/404');
+
+const invitacion = await cargarInvitacion(Astro);
+if (!invitacion) return Astro.rewrite('/404');
+if (!invitacion.canonica) return Astro.redirect(`${invitacion.base}/${Astro.params.pantalla ?? ''}`, 301);
+
+const { base, ogTitle } = invitacion;
+const description = 'Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara';
+---
+
+<Recorrido title={tituloDe(inicial)} description={description} base={base} inicial={inicial.slug} ogTitle={ogTitle} noindex>
+	{
+		pantallas.map((pantalla, i) => {
+			const { Componente } = pantalla;
+			const siguiente = pantallas[i + 1];
+			return (
+				<Componente
+					id={pantalla.id}
+					slug={pantalla.slug}
+					titulo={tituloDe(pantalla)}
+					siguiente={siguiente ? enlaceDe(base, siguiente) : undefined}
+					confirmar={confirmacionDe(base)}
+					galeriaBoda={galeriaBodaDe('')}
+				/>
+			);
+		})
+	}
+</Recorrido>

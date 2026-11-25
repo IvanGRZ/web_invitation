@@ -89,7 +89,7 @@ export const evento = EventoSchema.parse({
   ],
   vestimenta: 'Etiqueta rigurosa',
   soloAdultos: true,
-  fechaLimiteRsvp: '2027-01-23T23:59:59-06:00',
+  fechaLimiteRsvp: '2027-01-15T23:59:59-06:00',
   galeriaBoda: {
     apertura: '2027-02-20T18:00:00-06:00',
     cierre: '2027-02-21T12:00:00-06:00',

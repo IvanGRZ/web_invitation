@@ -8,7 +8,8 @@
 // con los tableros más altos que una pantalla (p. ej. CeremoniaC, 390×1056).
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
 import { join, basename } from 'node:path';
-import { REF_DIR, RAIZ } from './comun.mjs';
+import { pathToFileURL } from 'node:url';
+import { REF_DIR, RAIZ, abrirNavegador } from './comun.mjs';
 
 const DESIGN = join(RAIZ, '..', '..', 'design');
 const origen = process.argv[2];
@@ -69,14 +70,8 @@ copiar(join(DESIGN, 'assets', 'fotos', 'toledo-propuesta.jpg'), 'toledo.jpg');
 copiar(join(DESIGN, 'assets', 'ikat-textura-marfil.svg'), 'ikat.svg');
 copiar(join(DESIGN, 'assets', 'invitacion-frente.jpg'), 'invitacion-frente.jpg');
 
-/**
- * Tableros con lógica (`renderVals()` en su <script type="text/x-dc">, p. ej. la galería): se ejecuta una vez
- * con su estado inicial y se sustituyen los {{valores}} y los <sc-for>. Queda una foto fija del tablero en su
- * estado inicial (sin interacción), suficiente para comparar. Los tableros sin renderVals no cambian.
- */
-function estadoInicial(src, cuerpo, estado) {
-  const codigo = src.match(/<script type="text\/x-dc"[^>]*>([\s\S]*?)<\/script>/)?.[1];
-  if (!codigo || !codigo.includes('renderVals')) return cuerpo;
+/** Ejecuta renderVals() de un tablero y devuelve sus valores (las funciones quedan como null). */
+function valoresDe(codigo, estado) {
   class DCLogic {
     constructor(props) { this.props = props; this.state = {}; }
     setState() {}
@@ -84,15 +79,64 @@ function estadoInicial(src, cuerpo, estado) {
   const Componente = new Function('DCLogic', `${codigo}\nreturn Component;`)(DCLogic);
   const componente = new Componente({});
   if (estado) componente.state = { ...componente.state, ...estado };
-  const vals = componente.renderVals();
+  return componente.renderVals();
+}
+
+// Tableros que miden texto con un <canvas> (las sillas con nombre achican el renglón que no cabe): su lógica
+// corre en Chrome, con las fuentes del tablero cargadas, para que las medidas sean las reales.
+let pagina;
+async function valoresEnChrome(codigo, estado, estilo) {
+  if (!pagina) {
+    const browser = await abrirNavegador();
+    process.on('exit', () => browser.close().catch(() => {}));
+    pagina = await browser.newPage();
+  }
+  const sonda = join(REF_DIR, '_sonda.html');
+  writeFileSync(sonda, `<!doctype html><html><head><meta charset="utf-8"><style>${estilo}</style></head><body></body></html>`);
+  await pagina.goto(pathToFileURL(sonda).href);
+  return pagina.evaluate(
+    async ([codigo, estado, fuente]) => {
+      await Promise.all([...document.fonts].map((f) => f.load().catch(() => {})));
+      await document.fonts.ready;
+      const valores = new Function('codigo', 'estado', `return (${fuente})(codigo, estado);`)(codigo, estado);
+      return JSON.parse(JSON.stringify(valores, (_k, v) => (typeof v === 'function' ? null : v)));
+    },
+    [codigo, estado, valoresDe.toString()],
+  );
+}
+
+/**
+ * Tableros con lógica (`renderVals()` en su <script type="text/x-dc">, p. ej. la galería): se ejecuta una vez
+ * con su estado inicial y se sustituyen los {{valores}} y los <sc-for>. Queda una foto fija del tablero en su
+ * estado inicial (sin interacción), suficiente para comparar. Los tableros sin renderVals no cambian.
+ */
+async function estadoInicial(src, cuerpo, estado, estilo) {
+  const codigo = src.match(/<script type="text\/x-dc"[^>]*>([\s\S]*?)<\/script>/)?.[1];
+  if (!codigo || !codigo.includes('renderVals')) return cuerpo;
+  const vals = /\bdocument\./.test(codigo) ? await valoresEnChrome(codigo, estado, estilo) : valoresDe(codigo, estado);
   const valor = (v) => (typeof v === 'function' || v == null ? '' : String(v));
-  if (estado) {
-    cuerpo = cuerpo.replace(/<sc-if value="\{\{(\w+)\}\}"[^>]*>([\s\S]*?)<\/sc-if>/g, (m, k, interior) => (k in vals ? (vals[k] ? interior : '') : m));
+  // Primero las listas (con los <sc-if> de cada elemento, p. ej. el apellido si lo tiene)…
+  cuerpo = cuerpo.replace(/<sc-for list="\{\{(\w+)\}\}" as="(\w+)"[^>]*>([\s\S]*?)<\/sc-for>/g, (_, lista, alias, interior) =>
+    (vals[lista] ?? [])
+      .map((item) =>
+        interior
+          .replace(new RegExp(`<sc-if value="\\{\\{${alias}\\.(\\w+)\\}\\}"[^>]*>([\\s\\S]*?)<\\/sc-if>`, 'g'), (_m, k, dentro) => (item[k] ? dentro : ''))
+          .replace(new RegExp(`\\{\\{${alias}\\.(\\w+)\\}\\}`, 'g'), (_m, k) => valor(item[k])),
+      )
+      .join(''),
+  );
+  // …y después los <sc-if> del tablero, de adentro hacia afuera, con los valores reales: en las variantes de un
+  // tablero con pasos y en los tableros que arrancan en otro paso (D.paso, p. ej. ConfLugares9 en las sillas).
+  if (estado || /"paso":\s*[1-9]/.test(codigo)) {
+    const interno = /<sc-if value="\{\{(\w+)\}\}"[^>]*>((?:(?!<sc-if)[\s\S])*?)<\/sc-if>/g;
+    let antes;
+    do {
+      antes = cuerpo;
+      cuerpo = cuerpo.replace(interno, (m, k, interior) => (k in vals ? (vals[k] ? interior : '') : m.replace('<sc-if', '<sc-si')));
+    } while (cuerpo !== antes);
+    cuerpo = cuerpo.replace(/<sc-si/g, '<sc-if');
   }
   return cuerpo
-    .replace(/<sc-for list="\{\{(\w+)\}\}" as="(\w+)"[^>]*>([\s\S]*?)<\/sc-for>/g, (_, lista, alias, interior) =>
-      (vals[lista] ?? []).map((item) => interior.replace(new RegExp(`\\{\\{${alias}\\.(\\w+)\\}\\}`, 'g'), (_m, k) => valor(item[k]))).join(''),
-    )
     .replace(/ on[A-Z]\w*="\{\{\w+\}\}"/g, '')
     .replace(/\{\{(\w+)\}\}/g, (m, k) => (k in vals ? valor(vals[k]) : m));
 }
@@ -103,8 +147,9 @@ for (const archivo of readdirSync(origen).filter((f) => f.endsWith('.dc.html')))
   const cuerpo = src.match(/<\/helmet>([\s\S]*?)<\/x-dc>/)?.[1] ?? '';
   const nombre = basename(archivo, '.dc.html');
   const salidas = [[nombre, undefined], ...Object.entries(VARIANTES[nombre] ?? {}).map(([v, estado]) => [`${nombre}-${v}`, estado])];
+  const estiloLocal = estilo.replace(/\/_blob\/([0-9a-f]{32})/g, (m, id) => BLOBS[id] ?? m).replace(/ds\/ivanemma\/fonts\//g, 'fonts/');
   for (const [destino, estado] of salidas) {
-    let html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${archivo}</title><style>${estilo}\nhtml,body{margin:0}</style></head><body>${estadoInicial(src, cuerpo, estado)}<script>${AJUSTAR}</script></body></html>`;
+    let html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${archivo}</title><style>${estilo}\nhtml,body{margin:0}</style></head><body>${await estadoInicial(src, cuerpo, estado, estiloLocal)}<script>${AJUSTAR}</script></body></html>`;
     html = html
       .replace(/\/_blob\/([0-9a-f]{32})/g, (m, id) => BLOBS[id] ?? m)
       .replace(/ds\/ivanemma\/fonts\//g, 'fonts/')
@@ -117,3 +162,4 @@ for (const archivo of readdirSync(origen).filter((f) => f.endsWith('.dc.html')))
     console.log('ok', destino, faltan.length ? `· faltan blobs: ${[...new Set(faltan)].join(', ')}` : '');
   }
 }
+process.exit(0);

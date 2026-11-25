@@ -16,11 +16,11 @@ Flujo de enlaces personales, candado, mensajes de WhatsApp y herramientas para n
   - **Nunca** busca por nombre o apellido: revelaría quién está invitado y con cuántos lugares.
 - **Vista previa de WhatsApp:** cada `/i/<codigo>` sirve sus propias meta OG: título "Ivan & Emma · Invitación para la Familia García", descripción breve e imagen de la portada. Va aunque la página lleve `noindex`.
 - **Mensaje de WhatsApp** (Ivan lo manda desde su teléfono). El enlace va completo con `https://`, para que sea tocable y muestre la vista previa:
-  > ¡Hola, familia García! Con mucho cariño les compartimos nuestra invitación: https://[dominio]/i/K7M2PQ9X — Ahí pueden confirmar su asistencia antes del 23 de enero. Si en algún momento les pide un código, es K7M2-PQ9X. Ivan y Emma
+  > ¡Hola, familia García! Con mucho cariño les compartimos nuestra invitación: https://[dominio]/i/K7M2PQ9X — Ahí pueden confirmar su asistencia antes del 15 de enero. Si en algún momento les pide un código, es K7M2-PQ9X. Ivan y Emma
 
 **Para evitar enviar enlaces cruzados (tareas para Claude Code):**
 
-1. **Lista de invitados con teléfono.** El CSV local (ignorado en git) lleva `family_name`, `seats`, `channel` y `phone` (sólo digitales). El script de `scripts/` valida que los teléfonos tengan formato y no se repitan.
+1. **Lista de invitados con teléfono.** La lista de Excel de Ivan exportada a CSV (ignorado en git): una fila por persona con NOMBRE, APELLIDOS, CELULAR e INVITACION LABEL (los acompañantes llevan "Acompañante <nombre de su principal>"). `npm run importar:invitados -- <lista.csv>` genera el SQL para Supabase en `scripts/salida/` (ignorada): crea las invitaciones con su código aleatorio (todas `digital`), las personas con su celular (10 dígitos → +52; si empieza con 1 → +1; de 11 a 15 dígitos ya trae su clave de país, p. ej. 49 de Alemania) y las relaciona; avisa de celulares repetidos o raros, personas sin apellido, acompañantes con error de dedo e invitaciones de más de 6.
 2. **Enlaces de WhatsApp listos.** Por cada familia digital, el script genera un enlace `https://wa.me/<telefono>?text=<mensaje>` que abre **el chat correcto con el mensaje ya escrito**, con su enlace personal y su código dentro. Ivan no copia ni pega nada, sólo revisa y envía.
 3. **Lista de envío local.** Es un HTML generado en una carpeta ignorada; **nunca se publica**, porque lleva teléfonos. Tiene una fila por familia: nombre, lugares, canal, botón "Abrir en WhatsApp", casilla de "enviado" (en `localStorage`) y la columna "abrió su enlace" con la fecha. Se regenera con un comando que lee las aperturas de Supabase con la service key.
 4. **Registro de aperturas.** Al cargar `/i/[codigo]` se guardan `first_opened_at` y `last_opened_at`.

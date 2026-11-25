@@ -22,7 +22,7 @@ const formatoHora = new Intl.DateTimeFormat('es-MX', {
 /**
  * @param {string | Date} instante
  * @param {{ mayuscula?: boolean, diaSemana?: boolean, anio?: boolean }} [opciones] mayuscula: capitaliza la primera
- *   letra (inicio de frase); diaSemana: false omite el día ("23 de enero de 2027", como la fecha límite del cierre);
+ *   letra (inicio de frase); diaSemana: false omite el día ("15 de enero de 2027", como la fecha límite del cierre);
  *   anio: false omite el año ("sábado 20 de febrero", como en la galería de la boda)
  * @returns {string} p. ej. "sábado 20 de febrero de 2027"
  */
@@ -59,7 +59,7 @@ const formatoHoja = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 's
 /**
  * Día y mes abreviado, como en una hoja de calendario.
  * @param {string | Date} instante
- * @returns {{ dia: string, mes: string }} p. ej. { dia: "23", mes: "ENE" }
+ * @returns {{ dia: string, mes: string }} p. ej. { dia: "15", mes: "ENE" }
  */
 export function hojaDeCalendario(instante) {
   /** @type {Record<string, string>} */

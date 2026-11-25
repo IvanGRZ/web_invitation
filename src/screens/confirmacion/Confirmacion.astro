@@ -10,7 +10,8 @@
 //   pasos     la familia todavía no responde: ¿Nos acompañarán? → ¿Quiénes vendrán? → mensaje → gracias
 //   regreso   la familia ya respondió: muestra su respuesta y "Cambiar mi respuesta"
 //   cerrada   pasó la fecha límite: sin formulario
-// Sin JS, la isla se oculta y queda una sola página con el mismo formulario (o el campo del código).
+// Sin JS, la isla se oculta y queda una sola página con el mismo formulario (o el campo del código), que envía
+// la misma Action por POST a la página; ésta vuelve a pintarse con el resultado (inválido, error o gracias).
 import Screen from '@/components/patterns/Screen.astro';
 import Button from '@/components/ui/Button.astro';
 import RsvpForm from './RsvpForm.jsx';
@@ -29,8 +30,17 @@ import './confirmacion.css';
  * @property {string} destinoCodigo dirección a la que lleva un código, con "{codigo}" (candado)
  * @property {string} [familia] p. ej. "Familia García"
  * @property {number} [lugares] lugares del pase (1–6)
- * @property {{ asiste: boolean, invitados: number, mensaje?: string, recibida: string } | null} [respuesta]
- * @property {string} [accion] action del formulario (la Action de Astro, cuando exista)
+ * @property {{ id: string, nombre: string, apellido: string }[]} [personas] personas de la invitación, en orden
+ * @property {{ asiste: boolean, invitados: number, asistentes?: string[], mensaje?: string, recibida: string } | null} [respuesta]
+ * @property {string} [accion] action del formulario de la respuesta (la Action `rsvp`)
+ * @property {string} [codigo] código de la familia (va oculto en el formulario de la respuesta)
+ * @property {string} [accionCodigo] action del formulario del candado (la Action `entrar`)
+ * @property {boolean} [codigoInvalido] sin JS: el código enviado no existe
+ * @property {string} [codigoEscrito] sin JS: el código que se envió
+ * @property {boolean} [errorSinJs] sin JS: no se pudo guardar la respuesta
+ * @property {string} [mensajeSinJs] sin JS: el mensaje que se envió (se conserva tras el error)
+ * @property {{ vista: 'hecho', si: boolean, n: number }} [gracias] sin JS: se guardó; se pinta "gracias" sin hidratar
+ * @property {string} [cambiar] sin JS: dirección de "Cambiar mi respuesta" en gracias
  * @property {Object} [simular] sólo páginas de muestra: resultados sin backend (ver RsvpForm.jsx)
  * @property {Object} [inicio] sólo páginas de muestra: estado con el que abre (ver RsvpForm.jsx)
  */
@@ -44,10 +54,19 @@ const {
 	destinoCodigo,
 	familia = '',
 	lugares = 1,
+	personas,
 	respuesta = null,
 	accion,
+	codigo,
+	accionCodigo,
+	codigoInvalido = false,
+	codigoEscrito = '',
+	errorSinJs = false,
+	mensajeSinJs,
+	gracias,
+	cambiar,
 	simular,
-	inicio,
+	inicio = codigoInvalido ? { codigo: codigoEscrito, codigoInvalido: true } : gracias,
 } = /** @type {Props} */ (Astro.props);
 
 const limite = {
@@ -64,9 +83,27 @@ const novios = {
 const whatsapp = `https://wa.me/${evento.whatsapp ?? ''}`;
 const recibida = respuesta ? fechaLarga(respuesta.recibida, { diaSemana: false }) : '';
 
-const props = { estado, familia, lugares, limite, novios, respuesta, recibida, volver, whatsapp, accion, destinoCodigo, simular, inicio };
-// La cerrada no tiene nada que tocar: se pinta en el servidor sin cargar React.
-const viva = estado !== 'cerrada';
+const props = {
+	estado,
+	familia,
+	lugares,
+	personas,
+	limite,
+	novios,
+	respuesta,
+	recibida,
+	volver,
+	whatsapp,
+	accion,
+	destinoCodigo,
+	codigoFamilia: codigo,
+	cambiar: gracias ? cambiar : undefined,
+	simular,
+	inicio,
+};
+// La cerrada no tiene nada que tocar: se pinta en el servidor sin cargar React. "gracias" sin JS, igual.
+const viva = estado !== 'cerrada' && !gracias;
+const mensajeSinJsValor = mensajeSinJs ?? respuesta?.mensaje ?? '';
 const lugaresSinJs = Array.from({ length: lugares }, (_, i) => i + 1);
 ---
 
@@ -89,7 +126,7 @@ const lugaresSinJs = Array.from({ length: lugares }, (_, i) => i + 1);
 				</a>
 				<p class="confirmacion__ceja confirmacion__ceja--oro">Confirma tu asistencia</p>
 				{estado === 'candado' ? (
-					<form method="get">
+					<form method="post" action={accionCodigo}>
 						<label for="confirmacion-codigo-sinjs">¿Cuál es el código de tu invitación?</label>
 						<input
 							id="confirmacion-codigo-sinjs"
@@ -100,13 +137,22 @@ const lugaresSinJs = Array.from({ length: lugares }, (_, i) => i + 1);
 							autocomplete="off"
 							maxlength="9"
 							required
+							value={codigoEscrito || undefined}
+							aria-invalid={codigoInvalido ? 'true' : undefined}
+							aria-describedby={codigoInvalido ? 'confirmacion-codigo-error-sinjs' : undefined}
 						/>
+						{codigoInvalido && (
+							<p class="confirmacion__alerta" role="alert" id="confirmacion-codigo-error-sinjs">
+								No encontramos ese código. Revísalo: son 8 letras y números, como aparece bajo el QR.
+							</p>
+						)}
 						<Button type="submit" block>
 							Entrar a mi invitación
 						</Button>
 					</form>
 				) : (
 					<form method="post" action={accion}>
+						{codigo && <input type="hidden" name="codigo" value={codigo} />}
 						<p class="confirmacion__familia confirmacion__familia--paso">{familia}</p>
 						<fieldset>
 							<legend>¿Nos acompañarán?</legend>
@@ -119,6 +165,19 @@ const lugaresSinJs = Array.from({ length: lugares }, (_, i) => i + 1);
 						</fieldset>
 						<fieldset>
 							<legend>¿Quiénes vendrán?</legend>
+							{personas ? (
+								personas.map((p) => (
+									<label>
+										<input
+											type="checkbox"
+											name="people"
+											value={p.id}
+											checked={respuesta?.asistentes ? respuesta.asistentes.includes(p.id) : true}
+										/>{' '}
+										{p.nombre} {p.apellido}
+									</label>
+								))
+							) : (
 							<label>
 								<select name="guests">
 									{lugaresSinJs.map((k) => (
@@ -129,6 +188,7 @@ const lugaresSinJs = Array.from({ length: lugares }, (_, i) => i + 1);
 								</select>
 								de {lugares} {lugares === 1 ? 'lugar' : 'lugares'}
 							</label>
+							)}
 						</fieldset>
 						<fieldset>
 							<legend>Un mensaje para nosotros</legend>
@@ -138,10 +198,15 @@ const lugaresSinJs = Array.from({ length: lugares }, (_, i) => i + 1);
 								aria-label="Un mensaje para nosotros (opcional)"
 								placeholder="Escríbenos algo bonito…"
 								maxlength={MENSAJE_MAX}
-							>{respuesta?.mensaje ?? ''}</textarea>
+							>{mensajeSinJsValor}</textarea>
 						</fieldset>
+						{errorSinJs && (
+							<p class="confirmacion__aviso" role="alert">
+								No pudimos guardar tu respuesta. Revisa tu conexión e inténtalo de nuevo; tu mensaje sigue aquí.
+							</p>
+						)}
 						<Button type="submit" block>
-							Confirmar asistencia
+							{errorSinJs ? 'Intentar de nuevo' : 'Confirmar asistencia'}
 						</Button>
 					</form>
 				)}

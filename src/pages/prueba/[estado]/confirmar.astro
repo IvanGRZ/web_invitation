@@ -1,39 +1,53 @@
 ---
-// Muestras de la confirmación con los datos del lienzo ("Familia García", 4 lugares), SÓLO en desarrollo
-// (en el build no se genera ninguna). Sirven para revisar cada paso y estado mientras no exista el backend
-// y para la comparación con el lienzo (tools/qa/casos.mjs):
-//   /prueba/pasos/confirmar           pasos 1 → 3 y gracias (guardar siempre funciona)
-//   /prueba/pasos-1 … pasos-6         lo mismo con pases de 1 a 6 lugares
+// Muestras de la confirmación con los datos del lienzo ("Familia García" y sus personas de ejemplo), SÓLO en
+// desarrollo (en el build no se genera ninguna). Sirven para revisar cada paso y estado sin backend y para la
+// comparación con el lienzo (tools/qa/casos.mjs):
+//   /prueba/pasos/confirmar           pasos 1 → 3 y gracias, 4 personas (guardar siempre funciona)
+//   /prueba/pasos-1 … pasos-12        lo mismo de 1 a 12 personas (de 7 a 12, dos filas)
+//   /prueba/nombres-4, -6, -12        nombres largos (ConfNombres*): el renglón que no cabe se achica
+//   /prueba/etiqueta/confirmar        pareja con nombre de invitación largo (ConfEtiqueta-*)
 //   /prueba/falla/confirmar           el primer intento de guardar falla (error al guardar)
 //   /prueba/candado/confirmar         el candado; K7M2-PQ9X es el código válido, cualquier otro es inválido
 //   /prueba/invalido/confirmar        el candado con un código inválido
 //   /prueba/error/confirmar           el paso del mensaje con el error al guardar
 //   /prueba/regreso[-no]/confirmar    la familia ya respondió (que sí / que no)
+//   /prueba/regreso-12/confirmar      12 personas, ya respondieron (van 10)
 //   /prueba/cerrada[-sin]/confirmar   pasó la fecha límite (con su respuesta / sin respuesta)
+//   /prueba/cerrada-12/confirmar      12 personas, pasó la fecha límite (van 10)
 import Recorrido from '@/layouts/Recorrido.astro';
 import { confirmacion, tituloDe } from '@/screens/index.js';
 import { muestra } from '@/screens/confirmacion/confirmacion.data.js';
 
 export function getStaticPaths() {
 	if (import.meta.env.PROD) return [];
-	const { respuesta, codigoValido, codigoInvalido } = muestra;
-	const pasos = (lugares) => ({ estado: 'pasos', lugares });
+	const { respuesta, codigoValido, codigoInvalido, personas, etiquetaLarga } = muestra;
+	const ejemplo = (lugares) => ({ lugares, personas: personas.ejemplo.slice(0, lugares) });
+	const pasos = (lugares) => ({ estado: 'pasos', ...ejemplo(lugares) });
+	// Con respuesta: van todas menos las que se indican (por su posición, como el lienzo).
+	const respondio = (lugares, faltan) => {
+		const asistentes = personas.ejemplo.slice(0, lugares).filter((_, i) => !faltan.includes(i)).map((p) => p.id);
+		return { ...respuesta, invitados: asistentes.length, asistentes };
+	};
 	/** @type {Record<string, Record<string, unknown>>} */
 	const muestras = {
 		pasos: pasos(4),
-		...Object.fromEntries([1, 2, 3, 4, 5, 6].map((l) => [`pasos-${l}`, pasos(l)])),
-		falla: { estado: 'pasos', simular: { fallarGuardado: true } },
+		...Object.fromEntries(Array.from({ length: 12 }, (_, k) => [`pasos-${k + 1}`, pasos(k + 1)])),
+		...Object.fromEntries([4, 6, 12].map((l) => [`nombres-${l}`, { estado: 'pasos', lugares: l, personas: personas.largos.slice(0, l) }])),
+		etiqueta: { estado: 'pasos', lugares: 2, personas: personas.pareja, familia: etiquetaLarga },
+		falla: { estado: 'pasos', ...ejemplo(4), simular: { fallarGuardado: true } },
 		candado: { estado: 'candado', simular: { codigoValido, destinoValido: '/prueba/pasos/confirmar' } },
 		invalido: {
 			estado: 'candado',
 			simular: { codigoValido, destinoValido: '/prueba/pasos/confirmar' },
 			inicio: { codigo: codigoInvalido, codigoInvalido: true },
 		},
-		error: { estado: 'pasos', inicio: { vista: 'p2', n: 3, mensaje: respuesta.mensaje, error: true } },
-		regreso: { estado: 'regreso', respuesta },
-		'regreso-no': { estado: 'regreso', respuesta: { ...respuesta, asiste: false, invitados: 0, mensaje: undefined } },
-		cerrada: { estado: 'cerrada', respuesta },
-		'cerrada-sin': { estado: 'cerrada', respuesta: null },
+		error: { estado: 'pasos', ...ejemplo(4), inicio: { vista: 'p2', n: 3, mensaje: respuesta.mensaje, error: true } },
+		regreso: { estado: 'regreso', ...ejemplo(4), respuesta: respondio(4, [3]) },
+		'regreso-no': { estado: 'regreso', ...ejemplo(4), respuesta: { ...respuesta, asiste: false, invitados: 0, asistentes: [], mensaje: undefined } },
+		'regreso-12': { estado: 'regreso', ...ejemplo(12), respuesta: respondio(12, [1, 10]) },
+		cerrada: { estado: 'cerrada', ...ejemplo(4), respuesta: respondio(4, [3]) },
+		'cerrada-sin': { estado: 'cerrada', ...ejemplo(4), respuesta: null },
+		'cerrada-12': { estado: 'cerrada', ...ejemplo(12), respuesta: respondio(12, [1, 10]) },
 	};
 	return Object.entries(muestras).map(([estado, props]) => ({ params: { estado }, props }));
 }

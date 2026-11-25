@@ -1,11 +1,8 @@
 // Pantalla aparte · Confirmación: datos de diseño de los tableros ConfirmacionD2 (390×844),
 // ConfirmacionEscritorio (1440×900) y ConfEstado-* (docs/pantallas.md § 6.7).
 
-/** Lugares de un pase: el más grande previsto es de 6 (CLAUDE.md § 3). */
-export const LUGARES_MAX = 6;
-
-/** Cascada de las sillas al llenarse o vaciarse (s entre una y otra). */
-export const CASCADA_S = 0.07;
+/** Personas de una invitación: hasta 12 (de 7 a 12, las sillas van en dos filas; lienzo del 24 nov). */
+export const LUGARES_MAX = 12;
 
 /** Longitud máxima del mensaje (el servidor la revalida cuando exista la Action). */
 export const MENSAJE_MAX = 500;
@@ -32,9 +29,27 @@ export const destellos = [
  * Familia y respuesta de muestra del lienzo ("Familia García", 4 lugares, 3 confirmados). Sólo las usan las
  * páginas de muestra de desarrollo (pages/prueba/) mientras no existe el backend; nunca la web publicada.
  */
+/** Personas de ejemplo del lienzo (en orden, una por silla): las mismas de los tableros, para compararlos. */
+const ejemplo = [
+  ['Roberto', 'García'], ['Guadalupe', 'Ruiz'], ['Sofía', 'García'], ['Mateo', 'García'], ['Valentina', 'Torres'],
+  ['Emiliano', 'García'], ['Fernanda', 'López'], ['Diego', 'García'], ['Ximena', 'Ortega'], ['Andrés', 'García'],
+  ['Lucía', 'Morales'], ['Tomás', 'García'],
+];
+/** Nombres largos del lienzo (ConfNombres4/6/12): prueban cómo se achica el renglón que no cabe. */
+const largos = [
+  ['Constantiniano', 'Santamarina'], ['Hermenegildo', 'Covarrubias'], ['Maximiliano', 'Bustamante'], ['Lupita', ''],
+  ['Purificación', 'Valenzuela'], ['Bartolomé', 'Echeverría'], ['Encarnación', 'Santibáñez'], ['Guadalupe', 'Altamirano'],
+  ['Leonardo', 'Castañeda'], ['Concepción', 'Villaseñor'], ['Ximena', 'Ortega'], ['Emiliano', 'Garza'],
+];
+/** Pareja con un nombre de invitación largo (ConfEtiqueta-*). */
+const pareja = [['Jonathan', 'Medina'], ['Jessica', 'Rodriguez']];
+const conId = (lista, clave) => lista.map(([nombre, apellido], i) => ({ id: `${clave}-${i + 1}`, nombre, apellido }));
+
 export const muestra = {
   familia: 'Familia García',
   lugares: 4,
+  personas: { ejemplo: conId(ejemplo, 'e'), largos: conId(largos, 'l'), pareja: conId(pareja, 'p') },
+  etiquetaLarga: 'Jonathan Medina y Jessica Rodriguez',
   codigoValido: 'K7M2PQ9X',
   codigoInvalido: 'K7N2PQ9X',
   respuesta: {

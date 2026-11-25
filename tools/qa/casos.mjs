@@ -15,15 +15,20 @@ const TOCAR = (...textos) => `(async () => {
   }
 })()`;
 
-// Pasos de la confirmación tal como los muestra el lienzo (que entra al paso 2 con 3 de 4 sillas ocupadas;
-// la web entra con todas: se libera la cuarta).
+// Pasos de la confirmación tal como los muestra el lienzo (que entra a las sillas con la segunda vacía, y con dos
+// filas con la segunda y la penúltima vacías; la web entra con todas: se liberan tocándolas por su nombre).
 const CONFIRMACION_PASOS = [
   ['paso1', '', []],
-  ['paso2', '-paso2', ['Sí, con mucho gusto', 'Lugar 4']],
-  ['paso3', '-paso3', ['Sí, con mucho gusto', 'Lugar 4', 'Continuar']],
-  ['gracias', '-gracias', ['Sí, con mucho gusto', 'Lugar 4', 'Continuar', 'Confirmar asistencia']],
+  ['paso2', '-paso2', ['Sí, con mucho gusto', 'Guadalupe Ruiz']],
+  ['paso3', '-paso3', ['Sí, con mucho gusto', 'Guadalupe Ruiz', 'Continuar']],
+  ['gracias', '-gracias', ['Sí, con mucho gusto', 'Guadalupe Ruiz', 'Continuar', 'Confirmar asistencia']],
   ['extranaremos', '-extranaremos', ['No podremos asistir', 'Confirmar asistencia']],
 ];
+// Nombres de las muestras (los del lienzo) y las sillas que el lienzo deja vacías: la segunda y, con dos filas, la
+// penúltima.
+const EJEMPLO = ['Roberto García', 'Guadalupe Ruiz', 'Sofía García', 'Mateo García', 'Valentina Torres', 'Emiliano García', 'Fernanda López', 'Diego García', 'Ximena Ortega', 'Andrés García', 'Lucía Morales', 'Tomás García'];
+const LARGOS = ['Constantiniano Santamarina', 'Hermenegildo Covarrubias', 'Maximiliano Bustamante', 'Lupita', 'Purificación Valenzuela', 'Bartolomé Echeverría', 'Encarnación Santibáñez', 'Guadalupe Altamirano', 'Leonardo Castañeda', 'Concepción Villaseñor', 'Ximena Ortega', 'Emiliano Garza'];
+const VACIAS = (nombres, l) => (l >= 7 ? [nombres[1], nombres[l - 2]] : [nombres[1]]);
 // Galería de la boda (pantalla aparte): muestra de /prueba/<estado>/galeria-de-la-boda ↔ tablero (celular, computadora).
 const GALERIA_BODA = [
   ['subiendo', 'GaleriaBoda-subir-c', 'GaleriaBoda-subir-escritorio'],
@@ -114,6 +119,22 @@ export const CASOS = [
     { nombre: `confirmacion-${ruta}-celular`, ruta: `/prueba/${ruta}/confirmar`, tamano: 'celular', tablero: `ConfEstado-${tablero}` },
     { nombre: `confirmacion-${ruta}-computadora`, ruta: `/prueba/${ruta}/confirmar`, tamano: 'computadora', tablero: `ConfEstado-${tablero}-escritorio` },
   ]),
+  // De 7 a 12 personas (dos filas), nombres largos y nombre de invitación largo (lienzo del 24 nov).
+  ...[7, 8, 9, 12].flatMap((l) => [
+    { nombre: `confirmacion-${l}-celular`, ruta: `/prueba/pasos-${l}/confirmar`, tamano: 'celular', tablero: `ConfLugares${l}`, accion: TOCAR('Sí, con mucho gusto', ...VACIAS(EJEMPLO, l)) },
+    { nombre: `confirmacion-${l}-computadora`, ruta: `/prueba/pasos-${l}/confirmar`, tamano: 'computadora', tablero: `ConfLugares${l}-escritorio`, accion: TOCAR('Sí, con mucho gusto', ...VACIAS(EJEMPLO, l)) },
+  ]),
+  { nombre: 'confirmacion-12-pase-celular', ruta: '/prueba/pasos-12/confirmar', tamano: 'celular', tablero: 'ConfLugares12-pase' },
+  { nombre: 'confirmacion-12-gracias-celular', ruta: '/prueba/pasos-12/confirmar', tamano: 'celular', tablero: 'ConfLugares12-gracias', accion: TOCAR('Sí, con mucho gusto', ...VACIAS(EJEMPLO, 12), 'Continuar', 'Confirmar asistencia') },
+  ...[4, 6, 12].map((l) => ({ nombre: `confirmacion-nombres-${l}-celular`, ruta: `/prueba/nombres-${l}/confirmar`, tamano: 'celular', tablero: `ConfNombres${l}`, accion: TOCAR('Sí, con mucho gusto', ...VACIAS(LARGOS, l)) })),
+  { nombre: 'confirmacion-etiqueta-pase-celular', ruta: '/prueba/etiqueta/confirmar', tamano: 'celular', tablero: 'ConfEtiqueta-pase' },
+  { nombre: 'confirmacion-etiqueta-sillas-celular', ruta: '/prueba/etiqueta/confirmar', tamano: 'celular', tablero: 'ConfEtiqueta-sillas', accion: TOCAR('Sí, con mucho gusto', 'Jessica Rodriguez') },
+  { nombre: 'confirmacion-etiqueta-computadora', ruta: '/prueba/etiqueta/confirmar', tamano: 'computadora', tablero: 'ConfEtiqueta-escritorio' },
+  ...['regreso', 'cerrado'].flatMap((t) => [
+    { nombre: `confirmacion-${t}-12-celular`, ruta: `/prueba/${t === 'cerrado' ? 'cerrada' : t}-12/confirmar`, tamano: 'celular', tablero: `ConfEstado-${t}-12` },
+    { nombre: `confirmacion-${t}-12-computadora`, ruta: `/prueba/${t === 'cerrado' ? 'cerrada' : t}-12/confirmar`, tamano: 'computadora', tablero: `ConfEstado-${t}-12-escritorio` },
+  ]),
+  { nombre: 'confirmacion-12-iphoneSE', ruta: '/prueba/pasos-12/confirmar', tamano: 'iphoneSE', accion: TOCAR('Sí, con mucho gusto') },
   { nombre: 'confirmacion-paso2-iphoneSE', ruta: '/prueba/pasos-6/confirmar', tamano: 'iphoneSE', accion: TOCAR('Sí, con mucho gusto') },
   { nombre: 'confirmacion-paso1-iphoneSE', ruta: '/prueba/pasos/confirmar', tamano: 'iphoneSE' },
   { nombre: 'confirmacion-candado-iphoneSE', ruta: '/confirmar', tamano: 'iphoneSE' },

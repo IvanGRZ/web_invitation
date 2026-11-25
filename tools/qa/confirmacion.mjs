@@ -1,5 +1,5 @@
 // Pruebas de comportamiento de la confirmación (docs/pantallas.md § 6.7) contra las páginas de muestra de dev:
-// sillas en orden y cascada, teclado, foco, error al guardar, candado, objetivos táctiles en iPhone SE, sin JS,
+// sillas que se marcan solas, teclado, foco, error al guardar, candado, objetivos táctiles en iPhone SE, sin JS,
 // movimiento reducido y la navegación sello del cierre → /confirmar → "Volver a la invitación".
 // Uso: node tools/qa/confirmacion.mjs (con astro dev en QA_WEB). Capturas en tools/qa/salida/.
 import { join } from 'node:path';
@@ -19,7 +19,7 @@ const nueva = async (t, extra) => {
 };
 const boton = (page, texto) => page.locator(':is(.confirmacion__isla, .screen) :is(button, a):visible').filter({ hasText: new RegExp(`^\\s*${texto}\\s*$`) }).first();
 
-// 1. Sillas en orden, cascada, contador, Continuar apagado, teclado.
+// 1. Cada silla se marca sola (sin cascada), contador, Continuar apagado, teclado.
 {
   const { ctx, page } = await nueva('celular');
   await page.goto(WEB + '/prueba/pasos/confirmar', { waitUntil: 'networkidle' });
@@ -28,29 +28,34 @@ const boton = (page, texto) => page.locator(':is(.confirmacion__isla, .screen) :
   await espera(300);
   const ocupadas = () => page.$$eval('.confirmacion__silla', (s) => s.map((b) => b.getAttribute('aria-pressed')).join(''));
   ok('al entrar, todas ocupadas', (await ocupadas()) === 'truetruetruetrue', await ocupadas());
-  await page.getByRole('button', { name: 'Lugar 2' }).click();
-  ok('tocar ocupada libera ella y las siguientes', (await ocupadas()) === 'truefalsefalsefalse', await ocupadas());
-  const dl = await page.$$eval('.confirmacion__silla', (s) => s.map((b) => b.style.getPropertyValue('--dl')).join(' '));
-  ok('cascada al vaciar (desde la última)', dl === '0.00s 0.14s 0.07s 0.00s', dl);
-  await page.getByRole('button', { name: 'Lugar 4' }).click();
-  ok('tocar vacía ocupa hasta ella', (await ocupadas()) === 'truetruetruetrue', await ocupadas());
-  const dl2 = await page.$$eval('.confirmacion__silla', (s) => s.map((b) => b.style.getPropertyValue('--dl')).join(' '));
-  ok('cascada al llenar (izq → der)', dl2 === '0.00s 0.00s 0.07s 0.14s', dl2);
-  await page.getByRole('button', { name: 'Lugar 1' }).click();
+  const NOMBRES = {"1":"Roberto García","2":"Guadalupe Ruiz","3":"Sofía García","4":"Mateo García"};
+  const silla = (k) => page.getByRole('button', { name: NOMBRES[k], exact: true });
+  await silla(2).click();
+  ok('tocar ocupada libera sólo ésa', (await ocupadas()) === 'truefalsetruetrue', await ocupadas());
+  await silla(4).click();
+  ok('se puede dejar a la 1 y la 3 sin las de en medio', (await ocupadas()) === 'truefalsetruefalse', await ocupadas());
+  await silla(2).click();
+  ok('tocar vacía ocupa sólo ésa', (await ocupadas()) === 'truetruetruefalse', await ocupadas());
+  const dl = await page.$$eval('.confirmacion__silla', (s) => s.map((b) => b.style.getPropertyValue('--dl')).join(''));
+  ok('sin cascada (ninguna silla espera turno)', dl === '', dl);
+  await silla(1).click();
+  await silla(2).click();
+  await silla(3).click();
   ok('vaciar todas', (await ocupadas()) === 'falsefalsefalsefalse', await ocupadas());
   ok('Continuar apagado sin sillas', await page.getByRole('button', { name: 'Continuar' }).isDisabled());
-  await page.getByRole('button', { name: 'Lugar 1' }).click();
-  ok('con todas vacías, la primera ocupa sólo la primera', (await ocupadas()) === 'truefalsefalsefalse', await ocupadas());
+  await silla(3).click();
+  ok('con todas vacías, se marca sólo la que se toca', (await ocupadas()) === 'falsefalsetruefalse', await ocupadas());
   const cuenta = await page.$eval('.confirmacion__cuenta', (c) => c.getAttribute('aria-live') + ' ' + c.textContent);
   ok('contador aria-live', cuenta.startsWith('polite') && cuenta.includes('1'), cuenta);
   // teclado
-  await page.getByRole('button', { name: 'Lugar 3' }).focus();
+  await silla(1).focus();
   await page.keyboard.press('Enter');
-  ok('teclado: Enter en Lugar 3', (await ocupadas()) === 'truetruetruefalse', await ocupadas());
+  ok('teclado: Enter en la silla 1', (await ocupadas()) === 'truefalsetruefalse', await ocupadas());
   await page.keyboard.press('Space');
-  ok('teclado: Espacio en Lugar 3 lo libera', (await ocupadas()) === 'truetruefalsefalse', await ocupadas());
+  ok('teclado: Espacio en la silla 1 la libera', (await ocupadas()) === 'falsefalsetruefalse', await ocupadas());
+  await page.keyboard.press('Enter');
   const foco = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
-  ok('foco se queda en la silla', foco === 'Lugar 3', foco);
+  ok('foco se queda en la silla', foco === 'Roberto García', foco);
   // tamaños de pase y objetivos táctiles
   await page.getByRole('button', { name: 'Continuar' }).click();
   await espera(200);
@@ -59,7 +64,7 @@ const boton = (page, texto) => page.locator(':is(.confirmacion__isla, .screen) :
   await page.locator('.confirmacion__isla textarea').fill('Hola');
   await page.getByRole('button', { name: 'Atrás' }).click();
   await espera(100);
-  ok('Atrás desde el mensaje → sillas, conserva', (await ocupadas()) === 'truetruefalsefalse', await ocupadas());
+  ok('Atrás desde el mensaje → sillas, conserva', (await ocupadas()) === 'truefalsetruefalse', await ocupadas());
   await page.getByRole('button', { name: 'Continuar' }).click();
   ok('mensaje conservado', (await page.locator('.confirmacion__isla textarea').inputValue()) === 'Hola');
   await page.getByRole('button', { name: 'Confirmar asistencia' }).click();
@@ -172,7 +177,7 @@ for (const ruta of ['/confirmar', '/prueba/pasos/confirmar', '/prueba/cerrada/co
   }));
   ok('reducido: sin animaciones corriendo en el paso 2', r.animando.length === 0, JSON.stringify(r.animando));
   ok('reducido: todo visible', r.opacidades === 0, r.opacidades);
-  await page.getByRole('button', { name: 'Lugar 2' }).click();
+  await page.getByRole('button', { name: 'Guadalupe Ruiz', exact: true }).click();
   const t = await page.evaluate(() => document.getAnimations().length);
   ok('reducido: sillas sin transición', t === 0, t);
   await boton(page, 'Continuar').click();

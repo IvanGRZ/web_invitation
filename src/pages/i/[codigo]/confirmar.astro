@@ -1,0 +1,64 @@
+---
+// Confirmación de una invitación (`/i/<codigo>/confirmar`): la pantalla aparte, de día, con su pase y una silla
+// por persona (su nombre y primer apellido debajo). Abre en `pasos` (todavía no responden), `regreso` (ya
+// respondieron) o `cerrada` (pasó la fecha límite).
+// Bajo demanda (SSR): depende de la invitación, de su respuesta y de la hora. Un código que no existe → 404.
+//
+// Con JS, la isla envía la Action `rsvp` sin recargar. Sin JS, el formulario hace POST a esta misma página con
+// ?_action=rsvp: Astro corre la Action antes de pintarla y aquí se lee su resultado con getActionResult()
+// (equivale a un Server Action de Next.js con progressive enhancement). Reenviar es inofensivo: el guardado es
+// idempotente, por eso no hace falta Post/Redirect/Get.
+import { actions } from 'astro:actions';
+import Recorrido from '@/layouts/Recorrido.astro';
+import { confirmacion, pantallas, rutaDe, tituloDe } from '@/screens/index.js';
+import { cargarInvitacion } from './_invitacion.js';
+
+export const prerender = false;
+
+const carga = await cargarInvitacion(Astro);
+if (!carga) return Astro.rewrite('/404');
+if (!carga.canonica && Astro.request.method === 'GET') return Astro.redirect(`${carga.base}/${confirmacion.slug}`, 301);
+
+const { invitacion, estado, base, ogTitle } = carga;
+const { Componente } = confirmacion;
+const description = 'Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara';
+const personas = invitacion.personas.map((p) => ({ id: p.id, nombre: p.nombre, apellido: p.primerApellido ?? '' }));
+
+// Sólo sin JS: resultado del formulario de respaldo.
+const resultado = Astro.getActionResult(actions.rsvp);
+/** @type {{ vista: 'hecho', si: boolean, n: number } | undefined} */
+let gracias;
+let mensajeEscrito;
+if (resultado?.data) {
+	gracias = { vista: 'hecho', si: resultado.data.asiste, n: resultado.data.asiste ? resultado.data.invitados : personas.length };
+} else if (resultado?.error) {
+	// El mensaje escrito se conserva (estado "error al guardar").
+	try {
+		// Siempre de un clon: el renderer de React vuelve a leer el cuerpo después (useActionState).
+		mensajeEscrito = (await Astro.request.clone().formData()).get('message')?.toString();
+	} catch {
+		mensajeEscrito = undefined;
+	}
+}
+---
+
+<Recorrido title={tituloDe(confirmacion)} description={description} base={base} inicial={confirmacion.slug} theme="marfil" ogTitle={ogTitle} noindex>
+	<Componente
+		id={confirmacion.id}
+		slug={confirmacion.slug}
+		titulo={tituloDe(confirmacion)}
+		estado={estado}
+		volver={rutaDe(base, pantallas[0].slug)}
+		destinoCodigo="/i/{codigo}/confirmar"
+		familia={invitacion.etiqueta}
+		lugares={personas.length}
+		personas={personas}
+		respuesta={invitacion.respuesta}
+		codigo={invitacion.codigo}
+		accion={String(actions.rsvp)}
+		errorSinJs={Boolean(resultado?.error) && estado !== 'cerrada'}
+		mensajeSinJs={mensajeEscrito}
+		gracias={estado === 'cerrada' ? undefined : gracias}
+		cambiar={rutaDe(base, confirmacion.slug)}
+	/>
+</Recorrido>

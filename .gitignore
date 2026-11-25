@@ -30,3 +30,13 @@ Thumbs.db
 # revisión visual: tableros del lienzo (diseño privado) y capturas
 tools/qa/.ref/
 tools/qa/salida/
+
+# importación de invitados: listas y SQL generados (datos privados)
+scripts/salida/
+*.csv
+
+# salidas de Claude (archivos de impresión y capturas del diseño: privados)
+/Claude outputs/
+
+# listas de invitados en Excel (datos privados)
+*.xlsx

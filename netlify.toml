@@ -1,0 +1,11 @@
+# Headers de seguridad (CLAUDE.md § 7 › Seguridad). La CSP la pone Astro (security.csp + staticHeaders).
+# Las páginas personalizadas (/i/<codigo>) agregan sus propios Cache-Control: private, no-store y X-Robots-Tag: noindex.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    X-Content-Type-Options = "nosniff"
+    # Los enlaces a mapas desde /i/<codigo> no deben filtrar el código en el Referer.
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # La galería de la boda sube fotos desde un <input type="file"> (no necesita la cámara directa).
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"

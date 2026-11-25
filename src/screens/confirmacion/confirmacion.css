@@ -581,7 +581,7 @@
   letter-spacing: 0.04em;
 }
 
-/* La cascada: cada silla espera su turno (--dl, 70 ms entre una y otra). */
+/* Retraso opcional de cada silla (--dl). Desde el 24 nov cada silla se marca sola y no hay cascada (--dl = 0). */
 .confirmacion__silla svg,
 .confirmacion__sombra,
 .confirmacion__silla .bk,
@@ -1372,5 +1372,108 @@ html:not(.js) .confirmacion__isla--viva {
   .confirmacion__etiqueta,
   .confirmacion__volver svg {
     transition: none;
+  }
+}
+
+/* Sin JS: el código enviado no existe (mismo rojo que las casillas del candado). */
+.confirmacion__sinjs input[aria-invalid='true'] {
+  border-color: var(--cf-rojo-borde);
+  background: var(--cf-rojo-fondo);
+}
+
+/* ─── De 1 a 12 personas, una silla por persona (lienzo del 24 nov: ConfLugares*, ConfNombres*, ConfEtiqueta-*) ───
+   Hasta 6, una fila; de 7 a 12, dos filas centradas (la de arriba con la silla de más). Cada silla tiene su columna
+   fija (silla + separación) según cuántas van en la fila: 78 / 64 / 56 (celular) y 94 / 82 / 74 (computadora).
+   --fila (cuántas sillas en la fila de arriba) lo pone RsvpForm. */
+.confirmacion__sillas {
+  --col: 78;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: 0;
+  row-gap: calc(14 * var(--u));
+  width: calc(var(--fila, 4) * var(--col) * var(--u));
+  margin-inline: auto;
+}
+
+.confirmacion__sillas--l5 { --col: 64; --fb: 11; --lb: 0.04em; }
+.confirmacion__sillas--l6 { --col: 56; --fb: 11; --lb: 0.04em; }
+
+.confirmacion__sillas .confirmacion__silla {
+  flex: none;
+  width: calc(var(--col) * var(--u));
+  min-width: 0;
+}
+
+/* Dos filas: sillas más chicas. */
+.confirmacion__sillas--dos .confirmacion__silla {
+  gap: calc(8 * var(--u));
+}
+
+.confirmacion__sillas--dos .confirmacion__silla svg {
+  width: calc(36 * var(--u));
+  height: calc(58 * var(--u));
+}
+
+.confirmacion__sillas--dos .confirmacion__sombra {
+  width: calc(28 * var(--u));
+  height: calc(5 * var(--u));
+  margin-top: calc(-6 * var(--u));
+}
+
+.confirmacion__sillas--dos .confirmacion__silla.is-on svg {
+  transform: translateY(calc(-4 * var(--u)));
+}
+
+/* Nombre y primer apellido bajo la silla, uno por renglón. Tamaño base 12 px (11 con 5 o 6 por fila); el renglón
+   que no cabe en su columna se achica hasta 8 px: RsvpForm lo mide y lo pone en --fc / --lc (celular) y --fp / --lp
+   (computadora). */
+.confirmacion__etiqueta-linea {
+  display: block;
+  white-space: nowrap;
+  line-height: 1.25;
+  font-size: calc(var(--fc, var(--fb, 12)) * var(--u));
+  letter-spacing: var(--lc, var(--lb, 0.08em));
+}
+
+/* Contador con 10 o más: dos cifras. */
+.confirmacion__odometro--ancho {
+  width: calc(58 * var(--u));
+}
+
+/* Sillitas del pase y del resumen en dos filas (--ancho: el de la fila de arriba, lo pone RsvpForm). */
+.confirmacion__sillitas--dos {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: calc(8 * var(--u));
+  width: calc(var(--ancho) * var(--u));
+}
+
+/* El nombre de la invitación que ocupa más de dos renglones baja de 52 a 42 (computadora: de 66 a 52). */
+.confirmacion__familia--paso.confirmacion__familia--larga {
+  font-size: calc(42 * var(--u));
+  line-height: calc(46 * var(--u));
+}
+
+.confirmacion__ceja {
+  text-wrap: balance;
+}
+
+@container recorrido (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .confirmacion__sillas { --col: 94; }
+  .confirmacion__sillas--l5 { --col: 82; }
+  .confirmacion__sillas--l6 { --col: 74; }
+
+  .confirmacion__etiqueta-linea {
+    font-size: calc(var(--fp, var(--fb, 12)) * var(--u));
+    letter-spacing: var(--lp, var(--lb, 0.08em));
+  }
+
+  .confirmacion__cuenta--dos {
+    margin-top: calc(20 * var(--u));
+  }
+
+  .confirmacion__familia.confirmacion__familia--larga-pc {
+    font-size: calc(52 * var(--u));
+    line-height: calc(56 * var(--u));
   }
 }

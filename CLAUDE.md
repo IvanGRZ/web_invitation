@@ -63,7 +63,7 @@ Los links de claude.ai son de la cuenta nueva de Ivan (migrados el 22 nov 2026; 
 | Código de vestimenta | Etiqueta rigurosa |
 | Edad | Evento exclusivo para mayores de 18 años (sin niños) |
 | Itinerario de la fiesta | 19:30 Cóctel de bienvenida · 21:20 Entrada de los novios · 21:30 Banquete · 22:30 El vals · 22:55 Abrimos la pista · 02:00 Fin de la fiesta (sólo horas de inicio; confirmado por Ivan) |
-| Fecha límite para confirmar | Sábado 23 de enero de 2027 (4 semanas antes) |
+| Fecha límite para confirmar | Viernes 15 de enero de 2027 (5 semanas antes; antes era el 23 de enero, Ivan lo cambió el 25 nov) |
 | Envío de invitaciones (impresas + enlace) | 7 al 12 de diciembre de 2026 |
 | Pases | Cada invitación es para una familia con un número fijo de lugares |
 | Zona horaria | America/Mexico_City (UTC-6) |
@@ -82,7 +82,7 @@ Los links de claude.ai son de la cuenta nueva de Ivan (migrados el 22 nov 2026; 
 
 Ejemplos aprobados:
 > Con la bendición de Dios y la alegría de nuestras familias, queremos compartir contigo el día en que uniremos nuestras vidas.
-> Te pedimos confirmar a más tardar el 23 de enero de 2027.
+> Te pedimos confirmar a más tardar el 15 de enero de 2027.
 > Recibimos tu confirmación. Nos hace muy felices compartir este día contigo.
 
 ---
@@ -144,8 +144,8 @@ Especificación completa de cada pantalla aprobada en **`docs/pantallas.md`** (l
 | Código de vestimenta | § 6.4 | `VestimentaGala`, `VestimentaEscritorio` | **Construida** (`src/screens/vestimenta/`) |
 | Galería (Un paso a la vez) | § 6.5 | `HistoriaPeliculaOro`, `HistoriaEscritorio` | **Construida** (`src/screens/galeria/`; faltan 11 de las 12 fotos) |
 | Cierre (El sello) | § 6.6 | `CierreSello`, `CierreEscritorio` | **Construida** (`src/screens/cierre/`; el sello lleva a `/confirmar`) |
-| Confirmación y sus estados | § 6.7 | `ConfirmacionD2`, `ConfirmacionEscritorio`, `ConfEstado-*` | **Construida la pantalla** (`src/screens/confirmacion/`, `/confirmar`; muestras en `/prueba/<estado>/confirmar` sólo en dev); falta el backend (Action, Supabase, `/i/[codigo]`) |
-| 404 y vista previa de WhatsApp | § 6.8 | `General404*`, `VistaPreviaWhatsApp` | **Construida** (`src/screens/no-encontrada/`, `pages/404.astro` con la dirección fija; `og:*` en `BaseLayout`, `site` = `URL` de Netlify); falta el `Astro.rewrite('/404')` de `/i/[codigo]` y el `og:title` por familia, con el backend |
+| Confirmación y sus estados | § 6.7 | `ConfirmacionD2`, `ConfirmacionEscritorio`, `ConfEstado-*` | **Construida con backend** (`src/screens/confirmacion/`; Actions `rsvp` y `entrar` en `src/actions/`, Supabase, `/confirmar` y `/i/[codigo]/confirmar` bajo demanda; muestras en `/prueba/<estado>/confirmar` sólo en dev) |
+| 404 y vista previa de WhatsApp | § 6.8 | `General404*`, `VistaPreviaWhatsApp` | **Construida** (`src/screens/no-encontrada/`, `pages/404.astro` con la dirección fija; `og:*` en `BaseLayout`, `site` = `URL` de Netlify); `404.astro` bajo demanda para el `Astro.rewrite('/404')` de `/i/[codigo]`; `og:title` por familia en `/i/[codigo]` |
 | Galería de la boda | § 6.9 | `GaleriaBoda-*` | **Construida la pantalla** (`src/screens/galeria-boda/`: subir, sus mensajes, el rollo antes/cerrada e historias; `/galeria-de-la-boda` y `/galeria-de-la-boda/historias`, bajo demanda; muestras en `/prueba/<estado>/galeria-de-la-boda` sólo en dev); falta el backend (Supabase Storage, `/i/[codigo]/galeria-de-la-boda`) |
 
 Reglas que aplican a todas: la portada **no se personaliza** (el pase sólo aparece en la confirmación); la confirmación es una pantalla aparte en marfil; el recorrido va de noche (portada) → marfil (bienvenida, ceremonia) → anochece (itinerario) → noche hasta el cierre.
@@ -197,7 +197,7 @@ src/
 ├─ pages/                    # [...pantalla].astro (`/`, `/bienvenida`, …) · i/[codigo]/[...pantalla].astro · 404.astro · _catalogo.astro (sólo dev) · api/ (cuando haya consumidor)
 └─ styles/                   # fonts.css · tokens.css (copias de design/) · global.css · screen.css · recorrido.css · ui/*.css
 supabase/migrations/         # esquema versionado (sin datos)
-scripts/                     # generación de códigos/QR desde un CSV local ignorado
+scripts/                     # importar-invitados.mjs (CSV → SQL para Supabase, con códigos); salida en scripts/salida/ (ignorada); después QR y WhatsApp
 netlify.toml                 # headers de seguridad
 ```
 
@@ -251,33 +251,21 @@ Los componentes de `design/reference/bundle.js` son la referencia de comportamie
 - Los actions son endpoints públicos (`/_actions/rsvp`): el handler revalida todo.
 - Guardado idempotente (`upsert` por `guest_id`): reenviar deja la última respuesta. Por eso no hay Post/Redirect/Get con sesiones y se configura `session: false`.
 
-### Datos (propuesta inicial, confirmar con Ivan)
-```sql
--- invitados: una fila por familia/invitación
-create table guests (
-  id uuid primary key default gen_random_uuid(),
-  code text unique not null,      -- aleatorio, 8 caracteres de un alfabeto de 31 sin ambiguos (sin 0/O, 1/l/I), NO secuencial ni adivinable; se muestra como K7M2-PQ9X
-  family_name text not null,      -- "Familia Guerrero Ruiz"
-  seats int not null check (seats between 1 and 6),   -- el pase más grande previsto es de 6
-  channel text not null check (channel in ('impresa', 'digital')),  -- cómo recibe la invitación
-  phone text,                     -- WhatsApp en formato internacional (52…), sólo para 'digital'; dato privado
-  first_opened_at timestamptz,    -- primera vez que se abrió su enlace (sin contar las vistas previas de WhatsApp)
-  last_opened_at timestamptz,
-  created_at timestamptz default now()
-);
--- confirmaciones: la última respuesta de cada familia
-create table rsvps (
-  guest_id uuid primary key references guests(id) on delete cascade,
-  attending boolean not null,
-  guests_count int not null default 0,
-  message text,
-  responded_at timestamptz default now()
-);
-```
+### Datos (aprobado por Ivan el 24 nov; esquema en `supabase/migrations/`)
+Una fila **por persona**; la invitación (lo que tiene código, enlace y QR) agrupa a una familia, a una persona sola o a una pareja.
+- `person`: `name`, `first_last_name` y `second_last_name` (los dos opcionales: hay quien sólo se conoce por su nombre), `phone` (su celular con clave de país, sin "+": 52… México, 1… EE. UU./Canadá, 49… Alemania, etc.). Existe aunque no esté en ninguna invitación. Nadie tiene dos nombres.
+- `invitations` (antes `guests`): `code` (8 caracteres de un alfabeto de 31 sin ambiguos, aleatorio, se muestra como K7M2-PQ9X), `label` ("Familia García", "Juan Pérez y Ana Ruiz"), `channel` (`impresa` | `digital`; Ivan lo cambia a mano), `phone` (privado; vale para **cualquier canal**: no hay regla que lo ate a `digital`), `first_opened_at` / `last_opened_at`.
+- `invitation_members`: `person_id` (llave primaria: una invitación a la vez), `invitation_id`, `role` (`titular` | `acompañante`), `position` (orden de las sillas; vacío = al final). **Sin agrupar = sin fila; agrupar o mover = insertar o cambiar esa fila.** Máximo **12 personas** por invitación (trigger). Borrar una invitación deja a sus personas sin agrupar.
+- `rsvps`: por persona (`person_id`, `attending`, `responded_at`). `invitation_responses`: el mensaje y la fecha de la invitación. Se guardan juntos en una transacción con la función `save_rsvp`.
+- `code_attempts`: intentos fallidos del candado por IP (sha-256), para el límite de 10 por hora.
+- Vista `guest_list`: una fila por persona con su invitación, rol y respuesta, para el editor de tablas de Supabase.
+- La confirmación pinta una silla por persona con su **nombre y primer apellido** debajo; **cada silla se marca y se desmarca sola**, sin cascada (Ivan, 24 nov): de una familia pueden ir la 1 y la 4. Nadie tiene dos nombres. Una invitación sin personas responde con el 404.
+- **De 1 a 12 sillas** (lienzo del 24 nov, `ConfLugares*`, `ConfNombres*`, `ConfEtiqueta-*`): hasta 6 en una fila; de 7 a 12, dos filas centradas, la de arriba con la de más. Cada silla tiene columna fija (78/64/56 celular, 94/82/74 computadora, según cuántas van en la fila) y el renglón del nombre que no cabe se achica hasta 8 px (`screens/confirmacion/sillas.js`, medido en el navegador). El nombre de la invitación que ocupa más de dos renglones baja de 52 a 42 (computadora 66 → 52).
 - Lectura y escritura **sólo desde el servidor** (Astro Actions / endpoints con la service key en variables de entorno de Netlify). RLS activado sin políticas públicas: el navegador nunca habla directo con Supabase.
 - Variables con `astro:env` (`envField` en `astro.config.mjs`): `SUPABASE_URL` (server) y `SUPABASE_SERVICE_ROLE_KEY` (server, **secret**), con `validateSecrets: true`.
-- Validar en servidor: el código existe, `guests_count <= seats`, si no asisten el conteo es 0, fecha límite (`2027-01-23T23:59:59-06:00`; México no tiene horario de verano, el offset fijo es correcto), longitud máxima del mensaje.
+- Validar en servidor: el código existe y tiene personas, quienes asisten son de esa invitación, si no asisten nadie va, fecha límite (`2027-01-15T23:59:59-06:00`; México no tiene horario de verano, el offset fijo es correcto), longitud máxima del mensaje.
 - Migraciones en `supabase/migrations/` (el esquema puede ser público). **Los datos de invitados nunca entran al repo.**
+- **Reglas en la base (`check`, `not null`, `unique`, triggers): sólo las que Ivan aprueba explícitamente.** Antes de escribir una, explícale en palabras qué cambio bloquea y con qué error. Un comentario o una nota de una propuesta ("sólo para digital") no es una regla. Pasó con `guests_check` (una invitación impresa no podía tener teléfono): impedía cambiar el canal a mano y se quitó (migración `20261124000200`).
 - Ivan puede ver/exportar confirmaciones desde el editor de tablas de Supabase; un `/admin` es opcional.
 
 ### Invitaciones impresas y digitales
@@ -285,7 +273,7 @@ Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/
 
 ### Seguridad
 - `security.checkOrigin` (activo por defecto) se mantiene.
-- `security.csp` (hashes) + `staticHeaders: true` en el adaptador de Netlify para que las páginas estáticas también lo reciban como header. Incompatible con `<ClientRouter />`, que no se usa.
+- `security.csp` (hashes) + `staticHeaders: true` en el adaptador de Netlify para que las páginas estáticas también lo reciban como header. Incompatible con `<ClientRouter />`, que no se usa. **Sólo en el build** (en `astro dev` bloquea lo que inyecta Vite y las islas no se hidratan); lleva `style-src-attr 'unsafe-inline'` por los atributos `style` de las pantallas. Se revisa con `astro build` + `astro preview`.
 - `netlify.toml`: HSTS, `X-Content-Type-Options`, `Permissions-Policy` y `Referrer-Policy: strict-origin-when-cross-origin` (los enlaces a mapas desde `/i/[codigo]` no deben filtrar el código en el `Referer`).
 
 ### Fuentes y assets
@@ -310,9 +298,9 @@ Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/
 
 ## 8. Estado y pendientes
 
-**Hecho:** proyecto Astro (JS + `checkJs`, React, Netlify), fuentes y tokens; base de la arquitectura; **portada**, **bienvenida**, **ceremonia y recepción**, **itinerario de la fiesta**, **código de vestimenta**, **galería**, **cierre**, la **pantalla de confirmación** con sus estados y la **galería de la boda** (subir con sus mensajes, el rollo antes/cerrada e historias) (celular y computadora, verificadas al píxel contra el lienzo; la ceremonia con `/calendario.ics`; la confirmación y la galería de la boda todavía sin backend); recorrido de pantallas con direcciones por pantalla e historial; herramientas de revisión visual en `tools/qa/`.
+**Hecho:** proyecto Astro (JS + `checkJs`, React, Netlify), fuentes y tokens; base de la arquitectura; **portada**, **bienvenida**, **ceremonia y recepción**, **itinerario de la fiesta**, **código de vestimenta**, **galería**, **cierre**, la **pantalla de confirmación** con sus estados y la **galería de la boda** (subir con sus mensajes, el rollo antes/cerrada e historias) (celular y computadora, verificadas al píxel contra el lienzo; la ceremonia con `/calendario.ics`; la galería de la boda todavía sin backend); el **backend de la confirmación** (Supabase, Actions `rsvp` y `entrar`, `/i/[codigo]` con su 404, registro de aperturas y límite de intentos del candado; Vitest en `src/server/`); recorrido de pantallas con direcciones por pantalla e historial; herramientas de revisión visual en `tools/qa/`.
 
-**Siguiente paso:** el backend de la confirmación (CLAUDE.md § 7 › RSVP y › Datos): Action `rsvp` (reemplaza `guardar()` y la validación del código en `RsvpForm.jsx`, marcados `TODO(backend)`), Supabase, `/i/[codigo]` y `/i/[codigo]/confirmar` bajo demanda (estado `pasos`, `regreso` o `cerrada` según la familia y la fecha). Con el mismo backend, la galería de la boda: Supabase Storage para `subir()` (`galeria-boda/subida.js`) y `fotosCompartidas()` (`galeria-boda/galeria-boda.js`), validación de hora, tipo y tamaño en el servidor, y `/i/[codigo]/galeria-de-la-boda` ("Compartiendo como"). Después, 404 y vista previa de WhatsApp (§ 6.8). Una sesión por pantalla. En la galería sólo falta poner las fotos en `src/screens/galeria/galeria.data.js` cuando Ivan las mande.
+**Siguiente paso:** revisar la CSP con un build (`astro build` + `astro preview`). Después, con el mismo Supabase, la galería de la boda: Supabase Storage para `subir()` (`galeria-boda/subida.js`) y `fotosCompartidas()` (`galeria-boda/galeria-boda.js`), validación de hora, tipo y tamaño en el servidor, y `/i/[codigo]/galeria-de-la-boda` ("Compartiendo como"). Una sesión por pantalla. En la galería sólo falta poner las fotos en `src/screens/galeria/galeria.data.js` cuando Ivan las mande.
 
 ### Pendientes (al 18 de noviembre)
 
@@ -327,6 +315,7 @@ Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/
 - Las doce fotos de la galería con su año, y los años en que se conocieron y en que empezaron a andar.
 
 **Diseño pendiente en Cowork:**
+
 
 - **Mesa de regalos:** sin decidir.
 - **Reverso impreso:** agregar bajo el QR el código (`K7M2-PQ9X`) y *"o entra a [dominio] con tu código"*. Hay que cerrarlo antes de la imprenta.

@@ -8,6 +8,8 @@ Herramientas de desarrollo para verificar que cada pantalla quede idéntica a su
 2. **Convertirlos** a HTML local (quedan en `tools/qa/.ref/`, ignorado en git porque es diseño privado):
    ```bash
    node tools/qa/referencias.mjs <carpeta-con-los-.dc.html>
+   (los tableros que miden texto con un <canvas>, como las sillas con nombre, se ejecutan en Chrome con sus fuentes;
+   los que arrancan en otro paso, `D.paso`, se convierten ya en ese paso)
    ```
    Si avisa "faltan blobs", descargar esos assets del lienzo a `tools/qa/.ref/` y agregarlos a `BLOBS` en `referencias.mjs`.
 3. **Servir las referencias** (`.claude/launch.json` › "referencias", o `npm run qa:referencias`) en http://localhost:4400, con `astro dev` corriendo en 4321.

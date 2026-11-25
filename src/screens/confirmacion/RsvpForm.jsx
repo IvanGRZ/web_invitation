@@ -9,11 +9,15 @@
 // Entrada de cada paso: cada bloque sube 14 px y aparece, escalonado como en el lienzo. Como el orden de los
 // bloques no es el mismo en celular y en computadora, cada uno lleva su retraso para cada tamaño (anim()).
 //
-// Datos que envía: { attending, guests, message } (guests = sillas ocupadas; 0 si no asisten). Mientras no
-// exista el backend, guardar() sólo simula (ver la nota en guardar()).
-import { useEffect, useRef, useState } from 'react';
+// Datos que envía: { codigo, attending, people, message } a la Action `rsvp` (people = ids de las personas de las
+// sillas ocupadas; ninguno si no asisten). Bajo cada silla va el nombre y el primer apellido de su persona. El candado pregunta a la Action `entrar` si el código existe. Las páginas de muestra (/prueba/, sin
+// código de familia) no llaman al servidor: simulan el resultado con `simular`.
+import { startTransition, useActionState, useEffect, useRef, useState } from 'react';
+import { actions } from 'astro:actions';
+import { withState } from '@astrojs/react/actions';
 import Button from '@/components/ui/Button.jsx';
-import { CASCADA_S, CODIGO_LARGO, LUGARES_MAX, MENSAJE_MAX, destellos } from './confirmacion.data.js';
+import { CODIGO_LARGO, LUGARES_MAX, MENSAJE_MAX, destellos } from './confirmacion.data.js';
+import { anchoDeSillitas, medir, sillasPorFila, tamanoDeFila } from './sillas.js';
 
 /** Silla Luis XVI de frente (viewBox 0 0 40 64): armazón, asiento acolchado y patas. */
 const ARMAZON =
@@ -23,8 +27,8 @@ const ARMAZON =
  * @typedef {'candado' | 'p0' | 'p1' | 'p2' | 'hecho' | 'regreso' | 'cerrada'} Vista
  * @typedef {{ asiste: boolean, invitados: number, mensaje?: string, recibida: string }} Respuesta
  * @typedef {{ mes: string, dia: string, fecha: string, nota: string, frase: string }} Limite
- *   mes "ENE", dia "23", fecha "Sábado 23 de enero de 2027", nota "23 de enero de 2027",
- *   frase "sábado 23 de enero de 2027"
+ *   mes "ENE", dia "15", fecha "Viernes 15 de enero de 2027", nota "15 de enero de 2027",
+ *   frase "viernes 15 de enero de 2027"
  * @typedef {{ vista?: Vista, si?: boolean, n?: number, mensaje?: string, error?: boolean, codigo?: string,
  *   codigoInvalido?: boolean }} Inicio estado con el que abre (sólo las páginas de muestra)
  * @typedef {{ codigoValido?: string, destinoValido?: string, fallarGuardado?: boolean }} Simular
@@ -47,7 +51,7 @@ function anim(dc, dp = null) {
 
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
-/** Hoja de calendario de la fecha límite: bloc marfil con otra hoja detrás, dos argollas, "ENE" y "23". */
+/** Hoja de calendario de la fecha límite: bloc marfil con otra hoja detrás, dos argollas, "ENE" y "15". */
 function Hoja({ limite, className, width = 44, height = 56, ...rest }) {
   return (
     <svg className={className} viewBox="0 0 44 56" width={width} height={height} aria-hidden="true" {...rest}>
@@ -80,12 +84,22 @@ function FechaLimite({ limite, clave = 'Confirma a más tardar el', className = 
   );
 }
 
-/** Sillitas del pase o del resumen (sólo dibujo). */
-function Sillitas({ lugares, ocupadas = 0, tam, className = '' }) {
+/** Ancho (w) y separación (g) de cada tamaño de sillitas, en px del tablero. */
+const SILLITAS = { paso: [24, 10], pase: [28, 12], resumen: [16, 6] };
+
+/** Sillitas del pase o del resumen (sólo dibujo). De 7 a 12, en dos filas (la de arriba con la de más). */
+function Sillitas({ lugares, ocupadas = 0, marcada = (i) => i < ocupadas, tam, className = '' }) {
+  const dos = lugares > 6;
+  const [w, g] = SILLITAS[tam] ?? [16, 6];
+  const estilo = dos ? { '--ancho': anchoDeSillitas(sillasPorFila(lugares), w, g) } : undefined;
   return (
-    <span className={`confirmacion__sillitas confirmacion__sillitas--${tam} ${className}`} aria-hidden="true">
+    <span
+      className={`confirmacion__sillitas confirmacion__sillitas--${tam}${dos ? ' confirmacion__sillitas--dos' : ''} ${className}`}
+      style={estilo}
+      aria-hidden="true"
+    >
       {Array.from({ length: lugares }, (_, i) => (
-        <svg key={i} viewBox="0 0 40 64" className={i < ocupadas ? 'is-on' : undefined}>
+        <svg key={i} viewBox="0 0 40 64" className={marcada(i) ? 'is-on' : undefined}>
           <ellipse className="bk" cx="20" cy="17" rx="13" ry="16" />
           <path className="fr" d={ARMAZON} fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
@@ -126,6 +140,37 @@ function Flecha() {
   );
 }
 
+/** Tamaño medido de un renglón como variables CSS (px y espaciado en celular y en computadora). */
+function tamanoRenglon(medida, k) {
+  if (!medida) return undefined;
+  const [cel, pc] = [medida.cel[k], medida.pc[k]];
+  return cel && pc ? { '--fc': cel.px, '--lc': `${cel.ls}em`, '--fp': pc.px, '--lp': `${pc.ls}em` } : undefined;
+}
+
+/**
+ * Lo que va bajo una silla: el nombre y el primer apellido de su persona, en dos renglones; en las muestras
+ * (sin personas), "Lugar N". Cada renglón que no cabe en su columna se achica (medida de sillas.js; hasta
+ * medir, con el tamaño base).
+ * @param {{ nombre: string, apellido: string } | undefined} persona
+ * @param {number} i
+ * @param {any} [medida]
+ */
+function Etiqueta({ persona, i, medida }) {
+  if (!persona) return <>Lugar {i + 1}</>;
+  return (
+    <>
+      <span className="confirmacion__etiqueta-linea" style={tamanoRenglon(medida, 0)}>
+        {persona.nombre}
+      </span>
+      {persona.apellido && (
+        <span className="confirmacion__etiqueta-linea" style={tamanoRenglon(medida, 1)}>
+          {persona.apellido}
+        </span>
+      )}
+    </>
+  );
+}
+
 /** Deja sólo letras y números en mayúsculas (se puede pegar "K7M2-PQ9X"). */
 const limpiarCodigo = (texto) => texto.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODIGO_LARGO);
 
@@ -136,12 +181,16 @@ const limpiarCodigo = (texto) => texto.toUpperCase().replace(/[^A-Z0-9]/g, '').s
  * @param {number} [props.lugares] lugares del pase, 1–6
  * @param {Limite} props.limite fecha límite ya formateada
  * @param {{ el: string, ella: string, fecha: string }} props.novios nombres y fecha (izquierda del candado en computadora)
+ * @param {{ id: string, nombre: string, apellido: string }[]} [props.personas] personas de la invitación, en
+ *   orden (una por silla); sin ellas (muestras) las sillas dicen "Lugar N"
  * @param {Respuesta | null} [props.respuesta] lo que la familia ya respondió (regreso, cerrada)
  * @param {string} [props.recibida] fecha en que se recibió la respuesta, ya formateada ("12 de diciembre de 2026")
  * @param {string} props.volver dirección de la invitación ("Volver a la invitación")
  * @param {string} props.whatsapp enlace de WhatsApp de los novios
- * @param {string} [props.accion] action del formulario (la Action de Astro, cuando exista)
- * @param {string} props.destinoCodigo dirección a la que lleva un código, con "{codigo}" (candado)
+ * @param {string} [props.accion] action del formulario (la Action `rsvp`)
+ * @param {string} [props.codigoFamilia] código de la familia: sin él (muestras) no se llama al servidor
+ * @param {string} [props.cambiar] dirección de "Cambiar mi respuesta" en gracias (sólo pintada sin JS)
+ * @param {string} props.destinoCodigo dirección a la que lleva un código, con "{codigo}" (sólo muestras)
  * @param {Simular} [props.simular] sólo páginas de muestra: resultados sin backend
  * @param {Inicio} [props.inicio] sólo páginas de muestra: estado con el que abre
  */
@@ -151,11 +200,14 @@ export default function RsvpForm({
   lugares = 1,
   limite,
   novios,
+  personas,
   respuesta = null,
   recibida = '',
   volver,
   whatsapp,
   accion,
+  codigoFamilia,
+  cambiar,
   destinoCodigo,
   simular,
   inicio = {},
@@ -163,24 +215,64 @@ export default function RsvpForm({
   const L = Math.min(LUGARES_MAX, Math.max(1, lugares));
   const asistio = respuesta ? respuesta.asiste : true;
   const ocupadasPrevias = respuesta ? (respuesta.asiste ? respuesta.invitados : 0) : L;
+  /** ¿La persona de la silla i ya había confirmado que va? (con personas, por su id; si no, en orden) */
+  const asistioSilla = (i) =>
+    personas && respuesta?.asistentes ? respuesta.asistentes.includes(personas[i]?.id) : i < ocupadasPrevias;
+  /** Nombre de la silla para lectores de pantalla. */
+  const nombreSilla = (i) =>
+    personas?.[i] ? [personas[i].nombre, personas[i].apellido].filter(Boolean).join(' ') : `Lugar ${i + 1}`;
 
   const [vista, setVista] = useState(/** @type {Vista} */ (inicio.vista ?? (estado === 'pasos' ? 'p0' : estado)));
   const [si, setSi] = useState(inicio.si ?? asistio);
   // Al entrar, todas las sillas del pase ocupadas (o las que ya habían confirmado).
-  const [n, setN] = useState(inicio.n ?? (ocupadasPrevias || L));
-  const [prev, setPrev] = useState(inicio.n ?? (ocupadasPrevias || L));
+  // Cada silla se marca y se desmarca sola (Ivan, 24 nov): de una familia pueden ir la 1 y la 4.
+  // Al entrar, ocupadas las de quienes ya confirmaron que van o, si no han respondido, todas.
+  const [ocupadas, setOcupadas] = useState(() =>
+    Array.from({ length: L }, (_, i) => (inicio.n != null ? i < inicio.n : respuesta && respuesta.asiste ? asistioSilla(i) : true)),
+  );
+  const n = ocupadas.filter(Boolean).length;
   const [mensaje, setMensaje] = useState(inicio.mensaje ?? respuesta?.mensaje ?? '');
   const [error, setError] = useState(Boolean(inicio.error));
   const [guardando, setGuardando] = useState(false);
   const [codigo, setCodigo] = useState(limpiarCodigo(inicio.codigo ?? ''));
   const [codigoMalo, setCodigoMalo] = useState(Boolean(inicio.codigoInvalido));
   const [intentoCodigo, setIntentoCodigo] = useState(0);
+  // Tamaño de los nombres bajo las sillas y del nombre de la invitación: se mide en el navegador cuando las
+  // fuentes ya cargaron (en el servidor no hay con qué medir; mientras, el tamaño base).
+  const [medidas, setMedidas] = useState(/** @type {ReturnType<typeof medir> | null} */ (null));
+  useEffect(() => {
+    let vivo = true;
+    const fuentes = document.fonts;
+    Promise.all([fuentes.load('400 12px Jost'), fuentes.load('300 52px "Cormorant Garamond"')])
+      .catch(() => {})
+      .then(() => vivo && setMedidas(medir(personas ?? [], L, familia)))
+      .catch(() => {});
+    return () => {
+      vivo = false;
+    };
+  }, [personas, L, familia]);
 
   const titulo = useRef(/** @type {HTMLHeadingElement | null} */ (null));
   const yaMontado = useRef(false);
   const fallosSimulados = useRef(0);
   const cajaCodigo = useRef(/** @type {HTMLDivElement | null} */ (null));
   const campoCodigo = useRef(/** @type {HTMLInputElement | null} */ (null));
+  const buscandoCodigo = useRef(false);
+
+  // Action `rsvp` con useActionState (withState la adapta a la firma (estado, datos) de React). Si la red falla,
+  // la Action lanza: se convierte en un error como los demás para no tumbar la isla.
+  const rsvp = withState(actions.rsvp);
+  const [resultado, enviarRespuesta, enviando] = useActionState(
+    /** @param {any} estado @param {FormData} datos */
+    async (estado, datos) => {
+      try {
+        return await rsvp(estado, datos);
+      } catch {
+        return { data: undefined, error: { code: 'RED' } };
+      }
+    },
+    /** @type {any} */ (null),
+  );
 
   // Candado: el cursor de la primera casilla ya está dibujado, así que el campo real nace con el foco
   // (se puede escribir sin tocar antes). preventScroll: no mueve el recorrido.
@@ -209,53 +301,78 @@ export default function RsvpForm({
     setVista(siguiente);
   };
 
-  /** Sillas en orden: tocar una vacía ocupa todas hasta ella; tocar una ocupada la libera junto con las que siguen. */
+  /** Cada silla se marca y se desmarca sola. */
   const tocarSilla = (i) => {
-    setPrev(n);
-    setN(i < n ? i : i + 1);
+    setOcupadas((antes) => antes.map((ocupada, k) => (k === i ? !ocupada : ocupada)));
   };
 
   const atras = () => ir(vista === 'p2' && !si ? 'p0' : vista === 'p2' ? 'p1' : 'p0');
 
-  /**
-   * Guarda la respuesta. TODO(backend): llamar a la Action `rsvp` con { attending, guests, message }
-   * (CLAUDE.md § 7 › RSVP). Hoy sólo existe la pantalla: las páginas de muestra simulan el resultado y,
-   * sin simulación, se acepta sin guardar.
-   * @param {{ attending: boolean, guests: number, message: string }} _datos
-   */
-  const guardar = async (_datos) => {
+  // Respuesta de la Action `rsvp`: gracias, o el error al guardar con el mensaje conservado. Si las
+  // confirmaciones cerraron o el código dejó de existir mientras llenaban el formulario, se recarga la página:
+  // el servidor la pinta cerrada o con el 404.
+  useEffect(() => {
+    if (!resultado) return;
+    const codigoError = resultado.error?.code;
+    if (codigoError === 'FORBIDDEN' || codigoError === 'NOT_FOUND') window.location.reload();
+    else if (resultado.error) setError(true);
+    else ir('hecho');
+  }, [resultado]);
+
+  /** Muestras sin servidor: guardar siempre funciona (o falla la primera vez con `fallarGuardado`). */
+  const guardarSimulado = async () => {
+    setGuardando(true);
     await new Promise((r) => setTimeout(r, 450));
     if (simular?.fallarGuardado && fallosSimulados.current === 0) {
       fallosSimulados.current += 1;
-      throw new Error('simulado');
+      setError(true);
+    } else {
+      ir('hecho');
     }
+    setGuardando(false);
   };
+
+  const ocupado = guardando || enviando;
 
   /** @param {import('react').FormEvent<HTMLFormElement>} evento */
-  const enviar = async (evento) => {
+  const enviar = (evento) => {
     evento.preventDefault();
     if (vista === 'candado') return entrarConCodigo();
-    if (vista !== 'p2' || guardando) return;
-    setGuardando(true);
+    if (vista !== 'p2' || ocupado) return;
+    if (!codigoFamilia) return guardarSimulado();
+    // { codigo, attending, guests, message } salen de los campos del formulario.
+    const datos = new FormData(evento.currentTarget);
+    startTransition(() => enviarRespuesta(datos));
+  };
+
+  /**
+   * ¿A dónde lleva este código? null si no existe (o hubo demasiados intentos, o falló la red): un código
+   * mal escrito se queda en el candado con su estado inválido; el 404 es sólo para un enlace `/i/<codigo>`
+   * que no existe. Las muestras simulan cuál es el válido.
+   * @param {string} texto
+   */
+  const destinoDelCodigo = async (texto) => {
+    if (simular) return texto === simular.codigoValido ? (simular.destinoValido ?? destinoCodigo.replace('{codigo}', texto)) : null;
     try {
-      await guardar({ attending: si, guests: si ? n : 0, message: mensaje.trim() });
-      ir('hecho');
+      const datos = new FormData();
+      datos.set('codigo', texto);
+      const { data } = await actions.entrar(datos);
+      return data?.destino ?? null;
     } catch {
-      setError(true);
-    } finally {
-      setGuardando(false);
+      return null;
     }
   };
 
-  const entrarConCodigo = () => {
-    if (codigo.length !== CODIGO_LARGO) return;
-    // TODO(backend): validar el código en el servidor. Hoy sólo las páginas de muestra lo reconocen.
-    if (simular && codigo !== simular.codigoValido) {
+  const entrarConCodigo = async () => {
+    if (codigo.length !== CODIGO_LARGO || buscandoCodigo.current) return;
+    buscandoCodigo.current = true;
+    const destino = await destinoDelCodigo(codigo);
+    buscandoCodigo.current = false;
+    if (!destino) {
       setCodigoMalo(true);
       setIntentoCodigo((k) => k + 1);
       return;
     }
-    const destino = simular?.destinoValido ?? destinoCodigo.replace('{codigo}', codigo);
     window.location.assign(destino);
   };
 
@@ -276,39 +393,41 @@ export default function RsvpForm({
   const avance = enPasos ? `p${numeroPaso}` : vista === 'hecho' ? 'p4' : 'oculto';
 
   // Sillitas del pase en computadora: se pintan de índigo cuando ya eligieron quiénes vienen.
-  const ocupadasPase =
+  /** @param {number} i */
+  const marcadaPase = (i) =>
     vista === 'regreso' || vista === 'cerrada'
-      ? ocupadasPrevias
-      : (vista === 'p1' || vista === 'p2' || vista === 'hecho') && si
-        ? n
-        : 0;
+      ? asistioSilla(i)
+      : (vista === 'p1' || vista === 'p2' || vista === 'hecho') && si && ocupadas[i];
 
   const lugaresTexto = plural(L, 'lugar', 'lugares');
   const confirmados = `${n} de ${lugaresTexto} ${n === 1 ? 'confirmado' : 'confirmados'}`;
   const previos = `${ocupadasPrevias} de ${lugaresTexto} ${ocupadasPrevias === 1 ? 'confirmado' : 'confirmados'}`;
-  const tam = L >= 6 ? 'l6' : L === 5 ? 'l5' : 'l4';
+  // Hasta 6, una fila; de 7 a 12, dos filas (la de arriba con la de más). El tamaño de silla va por fila.
+  const porFila = sillasPorFila(L);
+  const dos = L > 6;
+  const tam = `l${tamanoDeFila(porFila)}`;
+  const claseSillas = `confirmacion__sillas confirmacion__sillas--${tam}${dos ? ' confirmacion__sillas--dos' : ''}`;
+  const estiloSillas = { '--fila': porFila };
+  const familiaLarga = `${medidas?.familiaLarga.cel ? ' confirmacion__familia--larga' : ''}${medidas?.familiaLarga.pc ? ' confirmacion__familia--larga-pc' : ''}`;
 
   /* ─── Piezas ──────────────────────────────────────────────────────── */
 
   const sillas = (
-    <div className={`confirmacion__sillas confirmacion__sillas--${tam}`} role="group" aria-label="Quiénes asistirán">
+    <div className={claseSillas} style={estiloSillas} role="group" aria-label="Quiénes asistirán">
       {Array.from({ length: L }, (_, i) => {
-        const ocupada = i < n;
-        const antes = i < prev;
-        const retraso = ocupada === antes ? 0 : (ocupada ? i - prev : prev - 1 - i) * CASCADA_S;
+        const ocupada = ocupadas[i];
         return (
           <button
             key={i}
             type="button"
             className={`confirmacion__silla${ocupada ? ' is-on' : ''}`}
-            style={{ '--dl': `${retraso.toFixed(2)}s` }}
             aria-pressed={ocupada}
-            aria-label={`Lugar ${i + 1}`}
+            aria-label={nombreSilla(i)}
             onClick={() => tocarSilla(i)}
           >
             <DibujoSilla />
             <span className="confirmacion__etiqueta" aria-hidden="true">
-              Lugar {i + 1}
+              <Etiqueta persona={personas?.[i]} i={i} medida={medidas?.sillas[i]} />
             </span>
           </button>
         );
@@ -317,11 +436,13 @@ export default function RsvpForm({
   );
 
   const sillasFijas = (
-    <div className={`confirmacion__sillas confirmacion__sillas--${tam} confirmacion__sillas--fijas`} role="img" aria-label={`${ocupadasPrevias} de ${lugaresTexto}`}>
+    <div className={`${claseSillas} confirmacion__sillas--fijas`} style={estiloSillas} role="img" aria-label={`${ocupadasPrevias} de ${lugaresTexto}`}>
       {Array.from({ length: L }, (_, i) => (
-        <div key={i} className={`confirmacion__silla${i < ocupadasPrevias ? ' is-on' : ''}`} aria-hidden="true">
+        <div key={i} className={`confirmacion__silla${asistioSilla(i) ? ' is-on' : ''}`} aria-hidden="true">
           <DibujoSilla />
-          <span className="confirmacion__etiqueta">Lugar {i + 1}</span>
+          <span className="confirmacion__etiqueta">
+            <Etiqueta persona={personas?.[i]} i={i} medida={medidas?.sillas[i]} />
+          </span>
         </div>
       ))}
     </div>
@@ -432,7 +553,7 @@ export default function RsvpForm({
       cuerpo: (
         <>
           {ceja('Confirma tu asistencia', true)}
-          <p className="confirmacion__familia confirmacion__familia--paso confirmacion__cel" {...anim(0.15)}>
+          <p className={`confirmacion__familia confirmacion__familia--paso confirmacion__cel${familiaLarga}`} {...anim(0.15)}>
             {familia}
           </p>
           {espacio}
@@ -470,8 +591,8 @@ export default function RsvpForm({
           <div className="confirmacion__bloque" {...anim(0.45, 0.25)}>
             {sillas}
           </div>
-          <div className="confirmacion__cuenta" aria-live="polite" {...anim(0.55, 0.35)}>
-            <span className="confirmacion__odometro" aria-hidden="true">
+          <div className={`confirmacion__cuenta${dos ? ' confirmacion__cuenta--dos' : ''}`} aria-live="polite" {...anim(0.55, 0.35)}>
+            <span className={`confirmacion__odometro${L >= 10 ? ' confirmacion__odometro--ancho' : ''}`} aria-hidden="true">
               {Array.from({ length: L + 1 }, (_, k) => (
                 <span key={k} className={k === n ? 'on' : undefined}>
                   {k}
@@ -524,7 +645,7 @@ export default function RsvpForm({
                 <span>No pudimos guardar tu respuesta. Revisa tu conexión e inténtalo de nuevo; tu mensaje sigue aquí.</span>
               </div>
             )}
-            <Button type="submit" block aria-busy={guardando || undefined} {...anim(error ? 0.6 : 0.5)}>
+            <Button type="submit" block aria-busy={ocupado || undefined} {...anim(error ? 0.6 : 0.5)}>
               {error ? 'Intentar de nuevo' : 'Confirmar asistencia'}
             </Button>
           </div>
@@ -563,7 +684,7 @@ export default function RsvpForm({
           </p>
           {si && (
             <div className="confirmacion__resumen" {...anim(0.25, 0.25)}>
-              <Sillitas lugares={L} ocupadas={n} tam="resumen" className="confirmacion__cel" />
+              <Sillitas lugares={L} marcada={(i) => ocupadas[i]} tam="resumen" className="confirmacion__cel" />
               <span className="confirmacion__etiqueta-pase">{confirmados}</span>
             </div>
           )}
@@ -574,7 +695,13 @@ export default function RsvpForm({
           <p className="confirmacion__nota" {...anim(0.5, si ? 0.35 : 0.25)}>
             Si algo cambia, puedes modificar tu respuesta hasta el {limite.nota}.
           </p>
-          <Button variant="link" className="confirmacion__cambiar" onClick={() => { setSi(true); ir('p0'); }} {...anim(0.6, si ? 0.45 : 0.35)}>
+          <Button
+            variant="link"
+            className="confirmacion__cambiar"
+            href={cambiar}
+            onClick={cambiar ? undefined : () => { setSi(true); ir('p0'); }}
+            {...anim(0.6, si ? 0.45 : 0.35)}
+          >
             Cambiar mi respuesta
           </Button>
         </>
@@ -606,7 +733,7 @@ export default function RsvpForm({
       acciones: (
         <>
           <div className="confirmacion__botones" {...anim(null, 0.35)}>
-            <Button block onClick={() => { setSi(true); setPrev(n); ir('p0'); }} {...anim(0.5)}>
+            <Button block onClick={() => { setSi(true); ir('p0'); }} {...anim(0.5)}>
               Cambiar mi respuesta
             </Button>
           </div>
@@ -629,7 +756,7 @@ export default function RsvpForm({
             <div className="confirmacion__suma" {...anim(null, 0.35)}>
               {respuesta ? (
                 <>
-                  {respuesta.asiste && <Sillitas lugares={L} ocupadas={ocupadasPrevias} tam="resumen" />}
+                  {respuesta.asiste && <Sillitas lugares={L} marcada={asistioSilla} tam="resumen" />}
                   <span className="confirmacion__etiqueta-pase">
                     {respuesta.asiste ? `Su respuesta: ${ocupadasPrevias} de ${lugaresTexto}` : 'Su respuesta: no podrán acompañarnos'}
                   </span>
@@ -668,8 +795,10 @@ export default function RsvpForm({
       onSubmit={enviar}
       noValidate
     >
+      {codigoFamilia && <input type="hidden" name="codigo" value={codigoFamilia} />}
       <input type="hidden" name="attending" value={si ? 'true' : 'false'} />
       <input type="hidden" name="guests" value={si ? n : 0} />
+      {personas && si && personas.map((p, i) => ocupadas[i] && <input key={p.id} type="hidden" name="people" value={p.id} />)}
 
       <div className="confirmacion__barra">
         {vista === 'p1' || vista === 'p2' ? (
@@ -712,11 +841,11 @@ export default function RsvpForm({
             </>
           ) : (
             <>
-              <p className="confirmacion__familia" {...anim(null, 0.15)}>
+              <p className={`confirmacion__familia${familiaLarga}`} {...anim(null, 0.15)}>
                 {familia}
               </p>
               <div className="confirmacion__pase-sillas" {...anim(null, 0.25)}>
-                <Sillitas lugares={L} ocupadas={ocupadasPase} tam="pase" />
+                <Sillitas lugares={L} marcada={marcadaPase} tam="pase" />
                 <span className="confirmacion__etiqueta-pase">Válido para {plural(L, 'persona', 'personas')}</span>
               </div>
             </>

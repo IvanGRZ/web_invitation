@@ -1,11 +1,33 @@
 ---
 // Confirmación de la invitación general (`/confirmar`): sin código no se sabe la familia, así que la pantalla
-// pide el código de la invitación (el candado; nunca se busca por nombre). Con él lleva a la confirmación de
-// esa familia, `/i/<codigo>/confirmar` (CLAUDE.md § 7 › Rutas; se construye con el backend).
-// Es una página aparte del recorrido, de día: Recorrido con una sola pantalla (dirección y título de la
-// pestaña como las demás) y tema marfil.
+// pide el código de la invitación (el candado; nunca se busca por nombre). La Action `entrar` lo busca en guests:
+// si existe, lleva a la confirmación de esa familia (`/i/<codigo>/confirmar`); si no, se queda aquí con el estado
+// inválido. Un código mal escrito nunca lleva al 404 (ése es sólo para un enlace /i/<codigo> que no existe).
+//
+// Bajo demanda (SSR) por el respaldo sin JS: el formulario hace POST a esta página con ?_action=entrar, Astro corre
+// la Action antes de pintarla y aquí se lee el resultado (redirige o vuelve a pintar el candado con el error).
+// Nunca en caché: la respuesta depende de lo que se envió.
+// Es una página aparte del recorrido, de día: Recorrido con una sola pantalla y tema marfil.
+import { actions } from 'astro:actions';
 import Recorrido from '@/layouts/Recorrido.astro';
 import { confirmacion, pantallas, rutaDe, tituloDe } from '@/screens/index.js';
+
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+
+// Sólo sin JS: resultado del candado de respaldo.
+const resultado = Astro.getActionResult(actions.entrar);
+if (resultado?.data) return Astro.redirect(resultado.data.destino, 303);
+let codigoEscrito = '';
+if (resultado?.error) {
+	try {
+		// Siempre de un clon: el renderer de React vuelve a leer el cuerpo después (useActionState).
+		codigoEscrito = (await Astro.request.clone().formData()).get('codigo')?.toString().slice(0, 9) ?? '';
+	} catch {
+		codigoEscrito = '';
+	}
+}
 
 const base = '';
 const { Componente } = confirmacion;
@@ -20,5 +42,8 @@ const description = 'Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara
 		estado="candado"
 		volver={rutaDe(base, pantallas[0].slug)}
 		destinoCodigo="/i/{codigo}/confirmar"
+		accionCodigo={String(actions.entrar)}
+		codigoInvalido={Boolean(resultado?.error)}
+		codigoEscrito={codigoEscrito}
 	/>
 </Recorrido>

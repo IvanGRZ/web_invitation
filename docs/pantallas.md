@@ -99,20 +99,19 @@ Referencias exactas, funcionando: `design/reference/confirmacion.html` (celular)
   3. *Un mensaje para nosotros* (opcional) y "Confirmar asistencia".
   4. *gracias*, o *los extrañaremos* si no asisten. Si no asisten, el flujo se salta el paso 2.
 - **Arriba:** "Volver a la invitación" en el paso 1 y en gracias; "Atrás" en los pasos 2 y 3. A la derecha "1 de 3" y una línea dorada de avance.
-- **Sillas en orden** (Ivan, 18 nov):
-  - Tocar una silla vacía ocupa todas hasta ella; tocar una ocupada la libera junto con las que siguen.
-  - Con todas vacías, la primera ocupa sólo la primera.
-  - Se llenan en cascada de 70 ms.
-  - Al entrar, todas ocupadas.
+- **Una silla por persona** (Ivan, 24 nov; antes "sillas en orden" con cascada, 18 nov):
+  - Bajo cada silla, el nombre y el primer apellido de su persona (dos renglones). En las muestras de desarrollo, "Lugar N".
+  - Cada silla se marca y se desmarca sola: de una familia pueden ir la 1 y la 4. Sin cascada.
+  - Al entrar, todas ocupadas (o las de quienes ya confirmaron que van).
   - Sin sillas ocupadas, "Continuar" se deshabilita.
-  - El pase más grande previsto es de **6 lugares**. Van siempre en una fila; el tamaño de la silla depende del pase (en el manual).
-- **Datos que envía:** `{ attending, guests, message }`, con `guests` = sillas ocupadas (0 si no asisten). Por la sección 7 › RSVP, el servidor revalida que `guests` ≤ `seats`.
+  - De 1 a 12 lugares (lienzo del 24 nov): hasta 6 en una fila; de 7 a 12, dos filas centradas, la de arriba con la silla de más. Cada silla tiene su columna fija según cuántas van en la fila (78/64/56 celular, 94/82/74 computadora) y el renglón del nombre que no cabe se achica hasta 8 px. Tableros `ConfLugares7/8/9/12`, `ConfNombres4/6/12`, `ConfEtiqueta-*` y los estados con 12. El HTML de referencia acepta `?lugares=1…12`.
+- **Datos que envía:** `{ attending, people, message }`, con `people` = ids de las personas de las sillas ocupadas (ninguno si no asisten). El servidor revalida que sean de esa invitación.
 - **Accesibilidad:**
   - Las sillas son controles reales: botones con `aria-pressed`, o un grupo de radio "cuántos asisten", con teclado.
   - El contador va con `aria-live`.
   - Los objetivos táctiles miden ≥ 44 px.
-  - Con `prefers-reduced-motion`, sin cascada, rebote, escritura ni destellos.
-- **Sin JS:** el formulario debe seguir funcionando. Una versión de una sola página (asistencia, número de asistentes y mensaje) que envíe la misma Action basta como respaldo.
+  - Con `prefers-reduced-motion`, sin rebote, escritura ni destellos.
+- **Sin JS:** el formulario debe seguir funcionando. Una versión de una sola página (asistencia, una casilla por persona y mensaje) que envíe la misma Action basta como respaldo.
 - **El contenedor de la pantalla usa `overflow: clip`, no `hidden`.** Con `hidden`, el navegador desplaza el contenido al enfocar un botón y la pantalla brinca; pasó en las pruebas.
 - **Computadora:** dos mitades separadas por un filete dorado al centro. A la izquierda, el pase fijo, cuyas sillitas se pintan de índigo al elegir quiénes vienen. A la derecha, la pregunta del paso.
 - **Estados (aprobados el 19 nov), en `design/reference/confirmacion-estados.html`:**
@@ -124,7 +123,7 @@ Referencias exactas, funcionando: `design/reference/confirmacion.html` (celular)
   2. **Código inválido:** borde rojo suave, una sacudida corta (sin ella con `prefers-reduced-motion`) y el mensaje exacto del manual, con `role="alert"`.
   3. **Error al guardar:** el mensaje escrito se conserva, aparece un aviso arriba del botón y el botón pasa a "Intentar de nuevo".
   4. **Regreso después de confirmar:** si la familia ya respondió, la confirmación abre aquí y no en el paso 1. Muestra su respuesta (sillas, mensaje y fecha en que se recibió) y "Cambiar mi respuesta", que entra al paso 1 con su respuesta precargada.
-  5. **Cerrada:** después del 23 de enero (`2027-01-23T23:59:59-06:00`), sin formulario. Muestra su respuesta, o "No recibimos su respuesta", y "Escríbenos por WhatsApp".
+  5. **Cerrada:** después del 15 de enero (`2027-01-15T23:59:59-06:00`), sin formulario. Muestra su respuesta, o "No recibimos su respuesta", y "Escríbenos por WhatsApp".
 
 ## 6.8 Pantallas generales (aprobadas el 19 nov)
 

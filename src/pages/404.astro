@@ -2,8 +2,17 @@
 // 404 (docs/pantallas.md § 6.8): cualquier ruta que no exista y, con el backend, un `/i/<codigo>` inexistente
 // (`return Astro.rewrite('/404')`). Página aparte del recorrido, de noche: Recorrido con una sola pantalla y la
 // dirección fija (la barra conserva la ruta que se pidió).
+// Bajo demanda: Astro no permite `Astro.rewrite()` desde una página bajo demanda hacia una estática (la estática
+// sólo existe como archivo HTML del build, no en el servidor), y /i/<codigo> la necesita.
 import Recorrido from '@/layouts/Recorrido.astro';
 import { confirmacionDe, noEncontrada, tituloDe } from '@/screens/index.js';
+
+export const prerender = false;
+
+// Los headers de la página que hace el rewrite no pasan al 404: se ponen aquí. Un /i/<codigo> inexistente nunca
+// debe quedar en la caché de la CDN ni indexado; para las demás rutas tampoco hace falta.
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('X-Robots-Tag', 'noindex');
 
 const { Componente } = noEncontrada;
 ---
