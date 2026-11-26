@@ -15,7 +15,8 @@
     "qa:comparar": "node tools/qa/comparar.mjs",
     "qa:recorrido": "node tools/qa/recorrido.mjs",
     "test": "vitest run",
-    "importar:invitados": "node scripts/importar-invitados.mjs"
+    "importar:invitados": "node scripts/importar-invitados.mjs",
+    "whatsapp": "node scripts/whatsapp.mjs"
   },
   "dependencies": {
     "@astrojs/netlify": "^8.2.13",
