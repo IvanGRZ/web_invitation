@@ -17,11 +17,11 @@ const invitacion = await cargarInvitacion(Astro);
 if (!invitacion) return Astro.rewrite('/404');
 if (!invitacion.canonica) return Astro.redirect(`${invitacion.base}/${Astro.params.pantalla ?? ''}`, 301);
 
-const { base, ogTitle } = invitacion;
+const { base, ogTitle, noindex } = invitacion;
 const description = 'Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara';
 ---
 
-<Recorrido title={tituloDe(inicial)} description={description} base={base} inicial={inicial.slug} ogTitle={ogTitle} noindex>
+<Recorrido title={tituloDe(inicial)} description={description} base={base} inicial={inicial.slug} ogTitle={ogTitle} noindex={noindex}>
 	{
 		pantallas.map((pantalla, i) => {
 			const { Componente } = pantalla;

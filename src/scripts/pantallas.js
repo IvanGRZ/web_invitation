@@ -146,10 +146,24 @@ function avanzar(paso) {
   return true;
 }
 
+/** Hay una hoja (popover) abierta encima del recorrido, p. ej. "Colores a evitar" en la vestimenta. */
+function hayHojaAbierta() {
+  try {
+    return document.querySelector(':popover-open') !== null;
+  } catch {
+    return false; // navegador sin popover: no puede haber ninguna abierta
+  }
+}
+
 recorrido?.addEventListener(
   'wheel',
   (evento) => {
     if (evento.ctrlKey) return; // zoom del navegador
+    // Con una hoja abierta la rueda no mueve el recorrido de detrás (ni por encadenamiento de scroll).
+    if (hayHojaAbierta()) {
+      evento.preventDefault();
+      return;
+    }
     const delta = Math.abs(evento.deltaY) >= Math.abs(evento.deltaX) ? evento.deltaY : 0;
     if (delta === 0) return;
     evento.preventDefault();
@@ -175,6 +189,11 @@ recorrido?.addEventListener('keydown', (evento) => {
   const objetivo = /** @type {HTMLElement} */ (evento.target);
   // No robar el teclado a controles (botones, enlaces, campos): Espacio/Enter los activan.
   if (objetivo !== recorrido && objetivo.closest('a, button, input, textarea, select, [contenteditable]')) return;
+  // Con una hoja abierta las teclas de desplazamiento no mueven el recorrido de detrás.
+  if (hayHojaAbierta()) {
+    if (evento.key in TECLAS || evento.key === ' ' || evento.key === 'Home' || evento.key === 'End') evento.preventDefault();
+    return;
+  }
   let paso = TECLAS[evento.key] ?? 0;
   if (evento.key === ' ') paso = evento.shiftKey ? -1 : 1;
   if (evento.key === 'Home' || evento.key === 'End') {

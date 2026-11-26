@@ -23,3 +23,17 @@ export function esVistaPrevia(userAgent) {
 export function cuentaComoApertura({ metodo, userAgent }) {
   return metodo === 'GET' && !esVistaPrevia(userAgent);
 }
+
+// Sólo quienes arman la vista previa de un enlace en un chat, NUNCA buscadores (Googlebot, Bingbot, Applebot): con
+// `noindex` WhatsApp muestra el título pero no la imagen (26 nov 2026), y a ellos no se les manda.
+// iMessage se presenta como "facebookexternalhit … Facebot Twitterbot".
+const VISTA_PREVIA_DE_ENLACE =
+  /whatsapp|facebookexternalhit|facebot|telegrambot|twitterbot|slackbot|discordbot|linkedinbot|skypeuripreview/i;
+
+/**
+ * ¿Pide la página una app de mensajería para armar la vista previa del enlace? Sin User-Agent: no.
+ * @param {string | null | undefined} userAgent
+ */
+export function esVistaPreviaDeEnlace(userAgent) {
+  return Boolean(userAgent) && VISTA_PREVIA_DE_ENLACE.test(/** @type {string} */ (userAgent));
+}

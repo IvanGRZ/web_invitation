@@ -40,6 +40,13 @@ const EventoSchema = z.object({
     )
     .min(1),
   vestimenta: z.string().min(1),
+  /** Colores que ellas deben evitar (Ivan, 26 nov). El tono de cada uno vive en screens/vestimenta. */
+  coloresAEvitar: z.array(
+    z.object({
+      clave: z.enum(['blanco', 'rojo', 'azul-neblina']),
+      nombre: z.string().min(1),
+    }),
+  ),
   soloAdultos: z.boolean(),
   /** Último instante válido para confirmar asistencia. */
   fechaLimiteRsvp: instante,
@@ -85,6 +92,11 @@ export const evento = EventoSchema.parse({
     { clave: 'fin', momento: 'Fin de la fiesta', inicio: '2027-02-21T02:00:00-06:00' },
   ],
   vestimenta: 'Etiqueta rigurosa',
+  coloresAEvitar: [
+    { clave: 'blanco', nombre: 'Blanco' },
+    { clave: 'rojo', nombre: 'Rojo' },
+    { clave: 'azul-neblina', nombre: 'Azul neblina' },
+  ],
   soloAdultos: true,
   fechaLimiteRsvp: '2027-01-15T23:59:59-06:00',
   galeriaBoda: {

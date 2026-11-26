@@ -68,6 +68,7 @@ Referencia exacta: `design/reference/vestimenta.html` (390×740). Medidas en `de
 - "Código de vestimenta" · *Etiqueta rigurosa*; dos columnas con un moño y un vestido largo en línea dorada que se dibujan: "Ellos · Smoking" y "Ellas · Vestido largo" (esta aclaración sólo va en la web).
 - Placa de vidrio de noche con "Sólo adultos", la frase de los niños de la impresa y "Evento exclusivo para mayores de 18 años" (textos exactos en la sección 3 y en el manual).
 - Computadora (aprobada el 19 nov): `design/reference/vestimenta-computadora.html`, todo centrado en la noche estrellada.
+- **Colores a evitar (Ivan, 26 nov; todavía no está en el lienzo):** bajo "Vestido largo", un botón discreto (sólo "Colores a evitar", subrayado en dorado) que abre una hoja de vidrio de noche: en celular sube desde abajo (se cierra tocando fuera, con Esc, con "Cerrar" o deslizándola hacia abajo); en computadora es una placa centrada. Lleva *Colores a evitar*, *"Con cariño te pedimos evitar estos colores."* y tres círculos tachados con una diagonal dorada que se dibuja: blanco, rojo y azul neblina. Es un `popover` nativo: funciona sin JS. No mueve nada de la composición aprobada. Detalle y valores en `docs/bitacora.md` (26 nov).
 
 ## 6.5 Galería aprobada (Un paso a la vez)
 

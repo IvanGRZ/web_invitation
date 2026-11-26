@@ -61,6 +61,7 @@ Los links de claude.ai son de la cuenta nueva de Ivan (migrados el 22 nov 2026; 
 | Ceremonia religiosa | Templo Expiatorio Eucarístico de Guadalajara · Calle M. López Cotilla 935, Col. Americana · **18:00 hrs** |
 | Recepción | Mansión Magnolia (antigua mansión) · Calle Francisco I. Madero 636, Col. Centro · **19:30 hrs** |
 | Código de vestimenta | Etiqueta rigurosa |
+| Colores a evitar (ellas) | Blanco, rojo y azul neblina (Ivan, 26 nov; el azul es el de su foto de referencia, #6d8492) |
 | Edad | Evento exclusivo para mayores de 18 años (sin niños) |
 | Itinerario de la fiesta | 19:30 Cóctel de bienvenida · 21:20 Entrada de los novios · 21:30 Banquete · 22:30 El vals · 22:55 Abrimos la pista · 02:00 Fin de la fiesta (sólo horas de inicio; confirmado por Ivan) |
 | Fecha límite para confirmar | Viernes 15 de enero de 2027 (5 semanas antes; antes era el 23 de enero, Ivan lo cambió el 25 nov) |
@@ -141,7 +142,7 @@ Especificación completa de cada pantalla aprobada en **`docs/pantallas.md`** (l
 | Bienvenida | § 6.1 | `BienvenidaPostal`, `BienvenidaD` | **Construida** (`src/screens/bienvenida/`) |
 | Ceremonia y recepción | § 6.2 | `CeremoniaC`, `CeremoniaEscritorio` | **Construida** (`src/screens/ceremonia/`) |
 | Itinerario de la fiesta | § 6.3 | `ItinerarioD`, `ItinerarioEscritorio` | **Construida** (`src/screens/itinerario/`) |
-| Código de vestimenta | § 6.4 | `VestimentaGala`, `VestimentaEscritorio` | **Construida** (`src/screens/vestimenta/`) |
+| Código de vestimenta | § 6.4 | `VestimentaGala`, `VestimentaEscritorio` | **Construida** (`src/screens/vestimenta/`; con la hoja "Colores a evitar" del 26 nov, que todavía no está en el lienzo) |
 | Galería (Un paso a la vez) | § 6.5 | `HistoriaPeliculaOro`, `HistoriaEscritorio` | **Construida** (`src/screens/galeria/`; momentos clave con título, lugar y año, en orden cronológico; están graduación, Mazamitla, COVID, Quebec, Chichén Itzá, Roma y Toledo ("Dijo que sí"); el título va en lugar del año, pendiente de validar en Cowork) |
 | Cierre (El sello) | § 6.6 | `CierreSello`, `CierreEscritorio` | **Construida** (`src/screens/cierre/`; el sello lleva a `/confirmar`) |
 | Confirmación y sus estados | § 6.7 | `ConfirmacionD2`, `ConfirmacionEscritorio`, `ConfEstado-*` | **Construida con backend** (`src/screens/confirmacion/`; Actions `rsvp` y `entrar` en `src/actions/`, Supabase, `/confirmar` y `/i/[codigo]/confirmar` bajo demanda; muestras en `/prueba/<estado>/confirmar` sólo en dev) |
@@ -168,7 +169,7 @@ Reglas que aplican a todas: la portada **no se personaliza** (el pase sólo apar
 
 El QR impreso de cada familia apunta a `https://<dominio>/i/<codigo>`.
 
-`/i/[codigo]`: valida el formato del código con zod antes de consultar; si no existe → `return Astro.rewrite('/404')` (diseño en la sección 6.8); headers `Cache-Control: private, no-store` y `X-Robots-Tag: noindex` (nunca en caché de CDN ni indexada; no usar `cacheOnDemandPages`). Página completa bajo demanda, **no** server islands (el código va en la ruta, el pase no debe parpadear y el formulario sin JS necesita página bajo demanda).
+`/i/[codigo]`: valida el formato del código con zod antes de consultar; si no existe → `return Astro.rewrite('/404')` (diseño en la sección 6.8); headers `Cache-Control: private, no-store` y `X-Robots-Tag: noindex` (nunca en caché de CDN ni indexada; no usar `cacheOnDemandPages`). **Excepción:** a las vistas previas de los chats (`esVistaPreviaDeEnlace`: WhatsApp, Facebook/iMessage, Telegram…; nunca buscadores) no se les manda `noindex` (ni header ni `<meta>`): con él WhatsApp no muestra la imagen. Página completa bajo demanda, **no** server islands (el código va en la ruta, el pase no debe parpadear y el formulario sin JS necesita página bajo demanda).
 
 ### Estructura
 ```

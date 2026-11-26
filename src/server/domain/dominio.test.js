@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CodigoSchema, normalizarCodigo, tieneFormatoDeCodigo } from './codigo.js';
 import { estaAbierta, estadoDeConfirmacion, limpiarMensaje, MENSAJE_MAX, nombreCorto, paraQuien, validarRespuesta } from './confirmacion.js';
-import { cuentaComoApertura, esVistaPrevia } from './aperturas.js';
+import { cuentaComoApertura, esVistaPrevia, esVistaPreviaDeEnlace } from './aperturas.js';
 import { ErrorDeDominio } from './errores.js';
 import * as pantalla from '@/screens/confirmacion/confirmacion.data.js';
 
@@ -85,5 +85,15 @@ describe('aperturas', () => {
     expect(cuentaComoApertura({ metodo: 'GET', userAgent: iphone })).toBe(true);
     expect(cuentaComoApertura({ metodo: 'HEAD', userAgent: iphone })).toBe(false);
     expect(cuentaComoApertura({ metodo: 'POST', userAgent: iphone })).toBe(false);
+  });
+  it('quita el noindex sólo a las vistas previas de los chats, nunca a los buscadores', () => {
+    expect(esVistaPreviaDeEnlace('WhatsApp/2.23.20.0 A')).toBe(true);
+    expect(esVistaPreviaDeEnlace('facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)')).toBe(true);
+    expect(esVistaPreviaDeEnlace('TelegramBot (like TwitterBot)')).toBe(true);
+    expect(esVistaPreviaDeEnlace('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)')).toBe(false);
+    expect(esVistaPreviaDeEnlace('Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)')).toBe(false);
+    expect(esVistaPreviaDeEnlace('Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 (KHTML, like Gecko) Applebot/0.1')).toBe(false);
+    expect(esVistaPreviaDeEnlace(iphone)).toBe(false);
+    expect(esVistaPreviaDeEnlace(undefined)).toBe(false);
   });
 });

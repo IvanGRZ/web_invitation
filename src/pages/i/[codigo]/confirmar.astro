@@ -19,7 +19,7 @@ const carga = await cargarInvitacion(Astro);
 if (!carga) return Astro.rewrite('/404');
 if (!carga.canonica && Astro.request.method === 'GET') return Astro.redirect(`${carga.base}/${confirmacion.slug}`, 301);
 
-const { invitacion, estado, base, ogTitle } = carga;
+const { invitacion, estado, base, ogTitle, noindex } = carga;
 const { Componente } = confirmacion;
 const description = 'Ivan y Emma · sábado 20 de febrero de 2027 · Guadalajara';
 const personas = invitacion.personas.map((p) => ({ id: p.id, nombre: p.nombre, apellido: p.primerApellido ?? '' }));
@@ -42,7 +42,7 @@ if (resultado?.data) {
 }
 ---
 
-<Recorrido title={tituloDe(confirmacion)} description={description} base={base} inicial={confirmacion.slug} theme="marfil" ogTitle={ogTitle} noindex>
+<Recorrido title={tituloDe(confirmacion)} description={description} base={base} inicial={confirmacion.slug} theme="marfil" ogTitle={ogTitle} noindex={noindex}>
 	<Componente
 		id={confirmacion.id}
 		slug={confirmacion.slug}

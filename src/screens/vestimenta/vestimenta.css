@@ -28,6 +28,14 @@
   --vs-estrella: #fbefd2;
   --vs-estrella-halo: rgba(246, 227, 180, 0.6);
 
+  /* Colores a evitar (Ivan, 26 nov; Para Cowork: todavía no son tokens). El azul neblina es el tono medio
+   * del vestido de su foto de referencia; el rojo es provisional. */
+  --vs-blanco: #ffffff;
+  --vs-rojo: #b3262e;
+  --vs-azul-neblina: #6d8492;
+  /* La hoja: vidrio de noche un poco más denso que la placa, porque pasa sobre texto. */
+  --vs-hoja: rgba(27, 37, 55, 0.78);
+
   background: var(--vs-cielo-1);
   color: var(--vs-marfil);
 }
@@ -216,6 +224,103 @@
   animation: vs-suave 1.2s ease 1.1s forwards;
 }
 
+/* ─── Colores a evitar: el botón bajo "Vestido largo" ─────────────── */
+
+/* Sólo el texto subrayado (Ivan). Se centra sobre la columna con left + translate (no con text-align):
+ * si con el piso de 10 px quedara más ancho que la columna, se desborda parejo a los dos lados. El objetivo
+ * táctil mide 44 px de alto; el texto va centrado en él, en el hueco entre "Vestido largo" y la voluta. */
+.vestimenta__colores {
+  position: relative;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  align-items: center;
+  width: max-content;
+  min-height: max(44px, calc(44 * var(--u)));
+  margin: 0;
+  padding: 0 calc(6 * var(--u));
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: max(10px, calc(10 * var(--u)));
+  line-height: normal;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+/* El espaciado de la última letra no cuenta: ni para centrar (margen negativo) ni para el subrayado, que se
+ * dibuja con un degradado del ancho del texto sin ese espacio (text-decoration lo alargaría). */
+.vestimenta__colores-texto {
+  --subrayado: var(--gold);
+
+  margin-right: -0.16em;
+  padding-bottom: calc(4 * var(--u));
+  background: linear-gradient(var(--subrayado), var(--subrayado)) no-repeat left bottom / calc(100% - 0.16em) 1px;
+}
+
+.vestimenta__colores:hover {
+  color: var(--ink);
+}
+
+.vestimenta__colores:hover .vestimenta__colores-texto {
+  --subrayado: var(--gold-deep);
+}
+
+.vestimenta__colores:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-button);
+}
+
+.vestimenta__tono--blanco {
+  --tono: var(--vs-blanco);
+}
+
+.vestimenta__tono--rojo {
+  --tono: var(--vs-rojo);
+}
+
+.vestimenta__tono--azul-neblina {
+  --tono: var(--vs-azul-neblina);
+}
+
+/* Sólo sin popover (iOS 16 o anterior): el botón no abriría nada, así que se ve la lista en texto. */
+.vestimenta__colores-lista {
+  display: none;
+}
+
+@supports not selector(:popover-open) {
+  .vestimenta__colores {
+    pointer-events: none;
+  }
+
+  .vestimenta__colores-texto {
+    background: none;
+  }
+
+  .vestimenta__colores-lista {
+    display: block;
+    position: relative;
+    left: 50%;
+    translate: -50% 0;
+    width: max-content;
+    margin-top: calc(-8 * var(--u));
+    font-family: var(--font-sans);
+    font-size: max(10px, calc(10 * var(--u)));
+    letter-spacing: 0.1em;
+    color: var(--ink-muted);
+  }
+
+  .vestimenta__hoja {
+    display: none;
+  }
+}
+
 /* ─── Voluta ──────────────────────────────────────────────────────── */
 
 .vestimenta__ornamento {
@@ -345,6 +450,11 @@
     line-height: calc(34 * var(--u));
   }
 
+  /* Un punto menos que "ELLAS" (12), como en celular (11 → 10). */
+  .vestimenta__colores {
+    font-size: max(10px, calc(11 * var(--u)));
+  }
+
   .vestimenta__filete {
     left: calc(720 * var(--u));
     top: calc(288 * var(--u));
@@ -383,6 +493,258 @@
     margin: calc(18 * var(--u)) calc(-52 * var(--u)) 0;
     font-size: max(10px, calc(11 * var(--u)));
     letter-spacing: 0.14em;
+  }
+}
+
+/* ─── Colores a evitar: la hoja ───────────────────────────────────── *
+ * Popover nativo en la capa superior: no es parte del tablero, así que no usa --u (sus medidas son de la
+ * pantalla, como un panel del sistema). Celular: hoja inferior con radius-xl arriba que sube desde abajo.
+ * Computadora: placa de vidrio centrada que aparece subiendo 24 px. Al abrir, los círculos entran uno tras
+ * otro y la diagonal dorada que los tacha se dibuja como el moño y el vestido. */
+
+.vestimenta__hoja {
+  position: fixed;
+  inset: auto 0 0;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-6) calc(var(--space-8) + env(safe-area-inset-bottom));
+  overflow: visible;
+  border: 1px solid var(--vs-vidrio-borde);
+  border-bottom: 0;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--vs-hoja);
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  backdrop-filter: blur(var(--blur-glass));
+  box-shadow: var(--shadow-sheet);
+  color: var(--ink);
+  text-align: center;
+  touch-action: none;
+  overscroll-behavior: contain;
+
+  /* Cierre (y estado de partida de la apertura): abajo, fuera de la pantalla. */
+  translate: 0 100%;
+  transition:
+    translate 0.5s cubic-bezier(0.65, 0, 0.35, 1),
+    display 0.5s allow-discrete,
+    overlay 0.5s allow-discrete;
+}
+
+.vestimenta__hoja:popover-open {
+  translate: 0 0;
+  transition-duration: 1s;
+  transition-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@starting-style {
+  .vestimenta__hoja:popover-open {
+    translate: 0 100%;
+  }
+}
+
+/* Mientras el dedo la arrastra, la hoja lo sigue sin transición (scripts en Vestimenta.astro). */
+.vestimenta__hoja.is-arrastrando {
+  transition: none;
+}
+
+.vestimenta__hoja:focus {
+  outline: none;
+}
+
+/* El fondo se oscurece (la noche de la pantalla, más densa). Valores literales: ::backdrop no siempre
+ * hereda las variables de la hoja. */
+.vestimenta__hoja::backdrop {
+  background: rgba(15, 21, 34, 0);
+  transition:
+    background-color 0.5s ease,
+    display 0.5s allow-discrete,
+    overlay 0.5s allow-discrete;
+}
+
+.vestimenta__hoja:popover-open::backdrop {
+  background: rgba(15, 21, 34, 0.55);
+}
+
+@starting-style {
+  .vestimenta__hoja:popover-open::backdrop {
+    background: rgba(15, 21, 34, 0);
+  }
+}
+
+/* La agarradera que invita a deslizar hacia abajo. */
+.vestimenta__agarradera {
+  display: block;
+  width: 36px;
+  height: 4px;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--vs-vidrio-borde);
+}
+
+.vestimenta__hoja-titulo {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 32px;
+  line-height: normal;
+  color: var(--gold);
+}
+
+.vestimenta__hoja-frase {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.vestimenta__muestras {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-6);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vestimenta__muestra {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  width: 88px;
+}
+
+.vestimenta__hoja:popover-open .vestimenta__muestra {
+  animation: vs-muestra 1s cubic-bezier(0.2, 0.7, 0.2, 1) calc(0.3s + var(--i) * 0.12s) both;
+}
+
+.vestimenta__circulo {
+  display: block;
+  width: 56px;
+  height: 56px;
+  overflow: visible;
+}
+
+.vestimenta__circulo circle {
+  fill: var(--tono);
+  stroke: var(--gold);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.vestimenta__tache {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.vestimenta__hoja:popover-open .vestimenta__tache {
+  animation: vs-tacha 1.2s cubic-bezier(0.65, 0, 0.35, 1) calc(0.7s + var(--i) * 0.12s) both;
+}
+
+.vestimenta__muestra-nombre {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 11px;
+  line-height: normal;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.vestimenta__cerrar {
+  margin-top: var(--space-8);
+  min-width: 160px;
+}
+
+/* Celular acostado (320–400 de alto): menos aire para que la hoja quepa completa. */
+@media (max-height: 400px) {
+  .vestimenta__agarradera {
+    margin-bottom: var(--space-2);
+  }
+
+  .vestimenta__muestras {
+    margin-top: var(--space-4);
+  }
+
+  .vestimenta__cerrar {
+    margin-top: var(--space-4);
+  }
+}
+
+@keyframes vs-muestra {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes vs-tacha {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+/* Computadora (mismo corte que el recorrido; la hoja vive en la capa superior, fuera del contenedor). */
+@media (min-width: 1024px) and (min-aspect-ratio: 1 / 1) {
+  .vestimenta__hoja {
+    inset: 0;
+    width: 460px;
+    max-width: calc(100% - 2 * var(--space-6));
+    height: fit-content; /* con inset 0 y alto automático se estiraría a toda la pantalla */
+    margin: auto;
+    padding: var(--space-8) var(--space-12);
+    border-bottom: 1px solid var(--vs-vidrio-borde);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-paper);
+    touch-action: auto;
+    opacity: 0;
+    translate: 0 24px;
+    transition:
+      opacity 0.5s ease,
+      translate 0.5s cubic-bezier(0.65, 0, 0.35, 1),
+      display 0.5s allow-discrete,
+      overlay 0.5s allow-discrete;
+  }
+
+  .vestimenta__hoja:popover-open {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  @starting-style {
+    .vestimenta__hoja:popover-open {
+      opacity: 0;
+      translate: 0 24px;
+    }
+  }
+
+  .vestimenta__agarradera {
+    display: none;
+  }
+
+  .vestimenta__hoja-titulo {
+    font-size: 36px;
+  }
+
+  .vestimenta__muestras {
+    gap: var(--space-8);
+    margin-top: var(--space-8);
+  }
+
+  .vestimenta__circulo {
+    width: 64px;
+    height: 64px;
   }
 }
 
@@ -463,5 +825,24 @@
 
   .vestimenta__estrella {
     opacity: 0.8;
+  }
+
+  /* La hoja aparece y se va sin moverse; los círculos ya tachados. */
+  .vestimenta__hoja,
+  .vestimenta__hoja::backdrop,
+  .vestimenta__colores,
+  .vestimenta__colores-texto {
+    transition: none !important;
+  }
+
+  .vestimenta__hoja,
+  .vestimenta__hoja:popover-open {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  .vestimenta__hoja:popover-open .vestimenta__muestra,
+  .vestimenta__hoja:popover-open .vestimenta__tache {
+    animation: none;
   }
 }

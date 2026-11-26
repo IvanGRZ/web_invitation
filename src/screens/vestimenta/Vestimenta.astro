@@ -5,7 +5,13 @@
 //
 // De noche, sin ola: continúa la noche con la que termina el itinerario y sigue en la galería.
 // Encabezado → dos columnas (moño y vestido en línea dorada que se dibujan) → voluta → placa de vidrio "Sólo adultos".
+//
+// "Colores a evitar" (Ivan, 26 nov; todavía no está en el lienzo): bajo "Vestido largo", un botón discreto
+// (sólo el texto subrayado) que abre una hoja de vidrio con los colores tachados. La hoja es un `popover` nativo de HTML:
+// abre y cierra sin JS (tocar fuera y Esc los da el navegador). El script sólo le pasa el foco y la cierra al
+// deslizarla hacia abajo. Sin soporte de popover (iOS 16 o anterior) se ve la lista en texto bajo el botón.
 import Screen from '@/components/patterns/Screen.astro';
+import Button from '@/components/ui/Button.astro';
 import GlassCard from '@/components/ui/GlassCard.astro';
 import Ornament from '@/components/ui/Ornament.astro';
 import { evento } from '@/config/evento.js';
@@ -24,6 +30,8 @@ const { id, slug, titulo } = /** @type {Props} */ (Astro.props);
 
 /** @param {number[]} estrella */
 const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}s;--t:${t}s`;
+
+const colores = evento.coloresAEvitar;
 ---
 
 <Screen id={id} slug={slug} titulo={titulo} theme="noche" class="vestimenta" aria-labelledby="vestimenta-titulo">
@@ -62,6 +70,19 @@ const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}
 					</span>
 					<p class="vestimenta__quien">{c.quien}</p>
 					<p class="vestimenta__prenda">{c.prenda}</p>
+					{c.clave === 'ellas' && colores.length > 0 && (
+						<Fragment>
+							<button
+								type="button"
+								class="vestimenta__colores"
+								popovertarget="vestimenta-colores"
+								aria-haspopup="dialog"
+							>
+								<span class="vestimenta__colores-texto">Colores a evitar</span>
+							</button>
+							<p class="vestimenta__colores-lista">{colores.map((color) => color.nombre).join(' · ')}</p>
+						</Fragment>
+					)}
 				</li>
 			))
 		}
@@ -81,4 +102,92 @@ const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}
 			</GlassCard>
 		)
 	}
+
+	{
+		colores.length > 0 && (
+			<div
+				id="vestimenta-colores"
+				popover
+				class="vestimenta__hoja"
+				role="dialog"
+				aria-labelledby="vestimenta-colores-titulo"
+				tabindex="-1"
+				data-vestimenta-hoja
+			>
+				<span class="vestimenta__agarradera" aria-hidden="true" />
+				<h3 id="vestimenta-colores-titulo" class="vestimenta__hoja-titulo">Colores a evitar</h3>
+				<p class="vestimenta__hoja-frase">Con cariño te pedimos evitar estos colores.</p>
+				<ul class="vestimenta__muestras" role="list">
+					{colores.map((color, i) => (
+						<li class="vestimenta__muestra" style={`--i:${i}`}>
+							<svg class="vestimenta__circulo" viewBox="0 0 56 56" aria-hidden="true">
+								<circle class={`vestimenta__tono--${color.clave}`} cx="28" cy="28" r="27" />
+								<path class="vestimenta__tache" pathLength="1" d="M7 49L49 7" />
+							</svg>
+							<span class="vestimenta__muestra-nombre">{color.nombre}</span>
+						</li>
+					))}
+				</ul>
+				<Button
+					variant="secondary"
+					class="vestimenta__cerrar"
+					popovertarget="vestimenta-colores"
+					popovertargetaction="hide"
+				>
+					Cerrar
+				</Button>
+			</div>
+		)
+	}
 </Screen>
+
+<script>
+	// La hoja de "Colores a evitar" abre y cierra sola (popover nativo). Aquí sólo:
+	// · al abrir, el foco pasa a la hoja (al cerrar, el navegador lo regresa al botón);
+	// · en celular, deslizarla hacia abajo la cierra (la sigue con el dedo; si no baja lo suficiente, regresa).
+	const hoja = /** @type {HTMLElement | null} */ (document.querySelector('[data-vestimenta-hoja]'));
+	const DISTANCIA_PARA_CERRAR = 80;
+
+	if (hoja && 'hidePopover' in hoja) {
+		hoja.addEventListener('toggle', (evento) => {
+			if (/** @type {ToggleEvent} */ (evento).newState === 'open') hoja.focus({ preventScroll: true });
+		});
+
+		const esCelular = window.matchMedia('not ((min-width: 1024px) and (min-aspect-ratio: 1 / 1))');
+		/** @type {number | null} */
+		let inicio = null;
+		let bajada = 0;
+
+		hoja.addEventListener(
+			'touchstart',
+			(evento) => {
+				if (!esCelular.matches || evento.touches.length !== 1) return;
+				inicio = evento.touches[0].clientY;
+				bajada = 0;
+			},
+			{ passive: true },
+		);
+
+		hoja.addEventListener(
+			'touchmove',
+			(evento) => {
+				if (inicio === null) return;
+				bajada = Math.max(0, evento.touches[0].clientY - inicio);
+				hoja.classList.add('is-arrastrando');
+				hoja.style.translate = `0 ${bajada}px`;
+			},
+			{ passive: true },
+		);
+
+		const soltar = () => {
+			if (inicio === null) return;
+			inicio = null;
+			// Quitar el arrastre en el mismo cuadro: la transición parte de donde quedó el dedo.
+			hoja.classList.remove('is-arrastrando');
+			hoja.style.translate = '';
+			if (bajada > DISTANCIA_PARA_CERRAR) hoja.hidePopover();
+		};
+		hoja.addEventListener('touchend', soltar);
+		hoja.addEventListener('touchcancel', soltar);
+	}
+</script>
