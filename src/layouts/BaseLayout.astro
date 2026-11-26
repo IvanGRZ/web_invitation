@@ -1,5 +1,6 @@
 ---
 // Layout base: <head> común, estilos globales y tema.
+import { createHash } from 'node:crypto';
 import '@/styles/fonts.css';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
@@ -35,6 +36,11 @@ const ogImage = new URL('/vista-previa-whatsapp.jpg', Astro.site ?? Astro.url).h
 
 // Color de la barra del navegador en el celular: fondo del tema (paper-deep noche / paper marfil).
 const themeColor = theme === 'noche' ? '#0f1522' : '#f7f2e8';
+
+// Script en línea antes del primer pintado. La CSP sólo calcula el hash de los scripts que procesa Astro, no de los
+// is:inline: se registra aquí (en dev la CSP está apagada y Astro.csp no existe).
+const marcaJs = "document.documentElement.classList.add('js');";
+Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(marcaJs).digest('base64')}`);
 ---
 
 <!doctype html>
@@ -64,7 +70,7 @@ const themeColor = theme === 'noche' ? '#0f1522' : '#f7f2e8';
 		<link rel="preload" href={cormorant400Italic} as="font" type="font/woff2" crossorigin />
 
 		<!-- Marca que hay JS antes del primer pintado: sólo entonces las entradas esperan a que su pantalla llegue a la vista. -->
-		<script is:inline>document.documentElement.classList.add('js');</script>
+		<script is:inline set:html={marcaJs} />
 	</head>
 	<body>
 		<slot />

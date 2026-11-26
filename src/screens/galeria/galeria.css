@@ -431,16 +431,19 @@
   text-align: center;
 }
 
+/* El título del momento, donde el lienzo pone el año (Ivan, 25 nov; Para Cowork). Cursiva como la fecha de la
+   portada; en una línea: el script lo achica si no cabe (este tamaño es el máximo). */
 .galeria__anio {
-  left: 0;
-  right: 0;
+  left: calc(20 * var(--u));
+  right: calc(20 * var(--u));
   top: calc(596 * var(--u));
   font-family: var(--font-serif);
-  font-weight: 300;
-  font-size: calc(54 * var(--u));
+  font-style: italic;
+  font-weight: 400;
+  font-size: calc(40 * var(--u));
   line-height: calc(56 * var(--u));
-  letter-spacing: 0.02em;
-  font-variant-numeric: lining-nums;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
   color: var(--gl-oro-claro);
   animation: gl-suave 0.8s ease both;
 }
@@ -721,7 +724,7 @@ html:not(.js) .galeria__linea {
 
   .galeria__anio {
     top: calc(604 * var(--u));
-    font-size: calc(60 * var(--u));
+    font-size: calc(46 * var(--u));
     line-height: calc(62 * var(--u));
   }
 

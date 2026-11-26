@@ -78,7 +78,7 @@ Referencia exacta: `design/reference/galeria.html` (celular) y `design/reference
 - **Línea de años:** flechas a los lados y un punto por año que se puede tocar. Debe funcionar con teclado (flechas y puntos como botones con `aria-label` del año) y con gesto de deslizar en celular.
 - Textos de Ivan (exactos en el manual): *Un paso a la vez* · entrada · cierre · *"¡Compártenos las fotos que tomes esta noche!"* · botón **Compartir mis fotos**.
 - El botón lleva a la **galería de la boda** (sección 6.9), una pantalla aparte donde los invitados suben sus fotos.
-- **Datos pendientes de Ivan:** las doce fotos y sus años. Sólo está la de Toledo (2025), copiada en `design/assets/fotos/toledo-propuesta.jpg` para las referencias.
+- **Momentos (Ivan, 25 nov):** ya no una foto por año sino momentos clave en orden cronológico, cada uno con título, lugar y año (puede repetirse el año). El título va donde el lienzo pone el año (Cormorant cursiva dorada, 40 celular / 46 computadora, en una línea: si no cabe se achica) y abajo "Lugar · año"; los puntos y flechas dicen "momento". Pies: 2023 Quebec, Canadá; 2025 Roma, Italia. Toledo ("Dijo que sí") regresó como momento, después de Roma. **Datos pendientes de Ivan:** las diez fotos.
 
 ## 6.6 Cierre aprobado (El sello)
 

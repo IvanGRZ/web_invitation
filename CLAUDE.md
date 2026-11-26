@@ -142,7 +142,7 @@ Especificación completa de cada pantalla aprobada en **`docs/pantallas.md`** (l
 | Ceremonia y recepción | § 6.2 | `CeremoniaC`, `CeremoniaEscritorio` | **Construida** (`src/screens/ceremonia/`) |
 | Itinerario de la fiesta | § 6.3 | `ItinerarioD`, `ItinerarioEscritorio` | **Construida** (`src/screens/itinerario/`) |
 | Código de vestimenta | § 6.4 | `VestimentaGala`, `VestimentaEscritorio` | **Construida** (`src/screens/vestimenta/`) |
-| Galería (Un paso a la vez) | § 6.5 | `HistoriaPeliculaOro`, `HistoriaEscritorio` | **Construida** (`src/screens/galeria/`; faltan 11 de las 12 fotos) |
+| Galería (Un paso a la vez) | § 6.5 | `HistoriaPeliculaOro`, `HistoriaEscritorio` | **Construida** (`src/screens/galeria/`; momentos clave con título, lugar y año, en orden cronológico; están graduación, Mazamitla, COVID, Quebec, Chichén Itzá, Roma y Toledo ("Dijo que sí"); el título va en lugar del año, pendiente de validar en Cowork) |
 | Cierre (El sello) | § 6.6 | `CierreSello`, `CierreEscritorio` | **Construida** (`src/screens/cierre/`; el sello lleva a `/confirmar`) |
 | Confirmación y sus estados | § 6.7 | `ConfirmacionD2`, `ConfirmacionEscritorio`, `ConfEstado-*` | **Construida con backend** (`src/screens/confirmacion/`; Actions `rsvp` y `entrar` en `src/actions/`, Supabase, `/confirmar` y `/i/[codigo]/confirmar` bajo demanda; muestras en `/prueba/<estado>/confirmar` sólo en dev) |
 | 404 y vista previa de WhatsApp | § 6.8 | `General404*`, `VistaPreviaWhatsApp` | **Construida** (`src/screens/no-encontrada/`, `pages/404.astro` con la dirección fija; `og:*` en `BaseLayout`, `site` = `URL` de Netlify); `404.astro` bajo demanda para el `Astro.rewrite('/404')` de `/i/[codigo]`; `og:title` por familia en `/i/[codigo]` |
@@ -273,7 +273,7 @@ Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/
 
 ### Seguridad
 - `security.checkOrigin` (activo por defecto) se mantiene.
-- `security.csp` (hashes) + `staticHeaders: true` en el adaptador de Netlify para que las páginas estáticas también lo reciban como header. Incompatible con `<ClientRouter />`, que no se usa. **Sólo en el build** (en `astro dev` bloquea lo que inyecta Vite y las islas no se hidratan); lleva `style-src-attr 'unsafe-inline'` por los atributos `style` de las pantallas. Se revisa con `astro build` + `astro preview`.
+- `security.csp` (hashes) + `staticHeaders: true` en el adaptador de Netlify para que las páginas estáticas también lo reciban como header. Incompatible con `<ClientRouter />`, que no se usa. **Sólo en el build** (en `astro dev` bloquea lo que inyecta Vite y las islas no se hidratan); lleva `style-src-attr 'unsafe-inline'` por los atributos `style` de las pantallas. Los `<script is:inline>` no reciben hash solos: se registran con `Astro.csp?.insertScriptHash()` (ver `BaseLayout` y `Recorrido`). `astro preview` no funciona con el adaptador de Netlify: se revisa con `astro build` y un servidor local que sirva `dist/` con los headers de `.netlify/v1/config.json` y pase lo demás a la función SSR (verificado el 25 nov: sin bloqueos).
 - `netlify.toml`: HSTS, `X-Content-Type-Options`, `Permissions-Policy` y `Referrer-Policy: strict-origin-when-cross-origin` (los enlaces a mapas desde `/i/[codigo]` no deben filtrar el código en el `Referer`).
 
 ### Fuentes y assets
@@ -300,7 +300,7 @@ Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/
 
 **Hecho:** proyecto Astro (JS + `checkJs`, React, Netlify), fuentes y tokens; base de la arquitectura; **portada**, **bienvenida**, **ceremonia y recepción**, **itinerario de la fiesta**, **código de vestimenta**, **galería**, **cierre**, la **pantalla de confirmación** con sus estados y la **galería de la boda** (subir con sus mensajes, el rollo antes/cerrada e historias) (celular y computadora, verificadas al píxel contra el lienzo; la ceremonia con `/calendario.ics`; la galería de la boda todavía sin backend); el **backend de la confirmación** (Supabase, Actions `rsvp` y `entrar`, `/i/[codigo]` con su 404, registro de aperturas y límite de intentos del candado; Vitest en `src/server/`); recorrido de pantallas con direcciones por pantalla e historial; herramientas de revisión visual en `tools/qa/`.
 
-**Siguiente paso:** revisar la CSP con un build (`astro build` + `astro preview`). Después, con el mismo Supabase, la galería de la boda: Supabase Storage para `subir()` (`galeria-boda/subida.js`) y `fotosCompartidas()` (`galeria-boda/galeria-boda.js`), validación de hora, tipo y tamaño en el servidor, y `/i/[codigo]/galeria-de-la-boda` ("Compartiendo como"). Una sesión por pantalla. En la galería sólo falta poner las fotos en `src/screens/galeria/galeria.data.js` cuando Ivan las mande.
+**Siguiente paso:** publicar (subir a GitHub, quitar el login de Netlify, deploy con el dominio) y probar en producción. Después, con el mismo Supabase, la galería de la boda: Supabase Storage para `subir()` (`galeria-boda/subida.js`) y `fotosCompartidas()` (`galeria-boda/galeria-boda.js`), validación de hora, tipo y tamaño en el servidor, y `/i/[codigo]/galeria-de-la-boda` ("Compartiendo como"). Una sesión por pantalla. En la galería sólo falta poner las fotos en `src/screens/galeria/galeria.data.js` cuando Ivan las mande.
 
 ### Pendientes (al 18 de noviembre)
 
@@ -312,7 +312,7 @@ Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/
 - Los teléfonos de WhatsApp de las familias con invitación digital, y cuáles familias reciben impresa y cuáles digital.
 - Las medidas reales de la solapa del sobre, para ajustar el forro (`design/impresion/sobre/LEEME.txt`).
 - Si la tarjeta impresa cambia "Recepción a continuación" por "19:30".
-- Las doce fotos de la galería con su año, y los años en que se conocieron y en que empezaron a andar.
+- Galería: tiene todas sus fotos (Ivan, 25 nov). Faltan en alta definición las de París y del mirador de Toledo (735 px).
 
 **Diseño pendiente en Cowork:**
 

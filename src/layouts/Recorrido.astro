@@ -4,6 +4,7 @@
 // - Cada pantalla tiene su dirección: la barra del navegador la muestra y "Atrás" regresa a la anterior.
 // - La página abre directo en la pantalla de su dirección (`inicial`).
 // Comportamiento en scripts/pantallas.js; estilos del contenedor en styles/recorrido.css.
+import { createHash } from 'node:crypto';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import '@/styles/recorrido.css';
 
@@ -20,22 +21,24 @@ import '@/styles/recorrido.css';
  */
 
 const { title, description, base, inicial, noindex = false, theme = 'noche', fija = false, ogTitle } = /** @type {Props} */ (Astro.props);
+
+// Abre en la pantalla de la dirección antes del primer pintado (sin desplazamiento visible). Va en línea y la CSP no
+// calcula el hash de los is:inline: se registra aquí (en dev la CSP está apagada y Astro.csp no existe).
+const abrirEnSuPantalla = `(function () {
+	var recorrido = document.querySelector('[data-recorrido]');
+	var slug = recorrido && recorrido.getAttribute('data-inicial');
+	if (!slug) return;
+	var pantalla = recorrido.querySelector('[data-screen][data-slug="' + slug + '"]');
+	if (pantalla) recorrido.scrollTo({ top: pantalla.offsetTop, behavior: 'instant' });
+})();`;
+Astro.csp?.insertScriptHash(`sha256-${createHash('sha256').update(abrirEnSuPantalla).digest('base64')}`);
 ---
 
 <BaseLayout title={title} description={description} theme={theme} noindex={noindex} ogTitle={ogTitle}>
 	<main class="recorrido" data-recorrido data-base={base} data-inicial={inicial} data-fija={fija ? '' : undefined} tabindex="-1">
 		<slot />
 	</main>
-	<!-- Abre en la pantalla de la dirección antes del primer pintado (sin desplazamiento visible). -->
-	<script is:inline>
-		(function () {
-			var recorrido = document.querySelector('[data-recorrido]');
-			var slug = recorrido && recorrido.getAttribute('data-inicial');
-			if (!slug) return;
-			var pantalla = recorrido.querySelector('[data-screen][data-slug="' + slug + '"]');
-			if (pantalla) recorrido.scrollTo({ top: pantalla.offsetTop, behavior: 'instant' });
-		})();
-	</script>
+	<script is:inline set:html={abrirEnSuPantalla} />
 	<script>
 		import '@/scripts/pantallas.js';
 	</script>

@@ -1,16 +1,25 @@
 // Pantalla 6 · Galería (Un paso a la vez): datos de diseño de los tableros del lienzo
 // (HistoriaPeliculaOro 390×1042 y HistoriaEscritorio 1440×900). Coordenadas en pixeles del tablero.
-import toledo from './assets/toledo-propuesta.jpg';
+import graduacion from './assets/2017-graduacion.jpg';
+import mazamitla from './assets/2018-mazamitla.jpg';
+import covid from './assets/2020-covid.jpg';
+import lavandas from './assets/2023-lavandas.jpg';
+import quebec from './assets/2023-quebec.jpg';
+import chichen from './assets/2024-chichen-itza.jpg';
+import roma from './assets/2025-roma.jpg';
+import toledo from './assets/2025-toledo.jpg';
+import paris from './assets/2025-paris.jpg';
 
 /**
- * Una foto por año, de la más antigua a la más reciente (doce). La web empieza en la primera.
- * Pendiente de Ivan: las once fotos que faltan y sus años. Mientras, cada cuadro muestra el marcador del
- * lienzo ("Foto del año", año "20··"). Sólo está la de Toledo (2025), en el lugar donde la pone el lienzo.
+ * Momentos clave en orden cronológico (Ivan, 25 nov): ya no una foto por año; puede haber varias del mismo año.
+ * Cada uno con su título (el momento, donde el lienzo pone el año), su lugar y su año ("Lugar · año" abajo).
+ * Fotos en ./assets/ como <año>-<momento>.jpg; las que faltan muestran el marcador del lienzo ("Foto del año").
  * `posicion`: object-position de la foto en su ventana (como el background-position del lienzo).
  *
  * @typedef {Object} Foto
  * @property {number | null} anio
- * @property {string} [pie] pie de foto opcional
+ * @property {string} [titulo] el momento, de 2 a 5 palabras ("Nuestro primer viaje")
+ * @property {string} [pie] lugar ("Roma, Italia")
  * @property {ImageMetadata} [imagen]
  * @property {string} [alt]
  * @property {string} [posicion]
@@ -18,24 +27,78 @@ import toledo from './assets/toledo-propuesta.jpg';
 
 /** @type {Foto[]} */
 export const fotos = [
-  { anio: null },
-  { anio: null },
-  { anio: null },
-  { anio: null },
-  { anio: null },
-  { anio: null },
-  { anio: null },
-  { anio: null },
-  { anio: null },
-  { anio: null },
+  {
+    anio: 2017,
+    titulo: 'Donde todo empezó',
+    pie: 'Guadalajara, Jalisco',
+    imagen: graduacion,
+    alt: 'Ivan y Emma abrazados, vestidos de gala, la noche de su graduación',
+    posicion: '48% 50%',
+  },
+  {
+    anio: 2018,
+    titulo: 'Nuestro primer viaje',
+    pie: 'Mazamitla, Jalisco',
+    imagen: mazamitla,
+    alt: 'Ivan y Emma juntos frente a una cabaña de madera en Mazamitla',
+    posicion: '70% 50%',
+  },
+  {
+    anio: 2020,
+    titulo: 'Generación COVID',
+    pie: 'Guadalajara, Jalisco',
+    imagen: covid,
+    alt: 'Ivan y Emma con cubrebocas negros, en una selfie de noche',
+    posicion: '60% 50%',
+  },
+  {
+    anio: 2023,
+    titulo: 'Entre lavandas',
+    pie: 'Puebla, Puebla',
+    imagen: lavandas,
+    alt: 'Ivan y Emma dándose un beso en medio de un campo de lavandas al atardecer, en Puebla',
+    posicion: '50% 60%',
+  },
+  {
+    anio: 2023,
+    titulo: 'Cruzamos el mapa',
+    pie: 'Quebec, Canadá',
+    imagen: quebec,
+    alt: 'Ivan y Emma sentados en el pasto frente al Château Frontenac, en Quebec',
+    posicion: '66% 50%',
+  },
+  {
+    anio: 2024,
+    titulo: 'Nuestra primera maravilla del mundo',
+    pie: 'Chichén Itzá, Yucatán',
+    imagen: chichen,
+    alt: 'Ivan y Emma abrazados en el pasto frente a la pirámide de Kukulcán, en Chichén Itzá',
+    posicion: '55% 50%',
+  },
   {
     anio: 2025,
+    titulo: 'Una maravilla más',
+    pie: 'Roma, Italia',
+    imagen: roma,
+    alt: 'Ivan y Emma abrazados frente al Coliseo, en Roma',
+    posicion: '26% 50%',
+  },
+  {
+    anio: 2025,
+    titulo: 'Dijo que sí',
     pie: 'Toledo, España',
     imagen: toledo,
-    alt: 'Ivan y Emma en Toledo, con el Alcázar al fondo, el día de la propuesta',
-    posicion: '76% 40%',
+    alt: 'Ivan y Emma dándose un beso en un mirador de Toledo, el día de la propuesta',
+    posicion: '50% 70%',
   },
-  { anio: null },
+  {
+    anio: 2025,
+    titulo: 'Siempre nos quedará París',
+    pie: 'París, Francia',
+    imagen: paris,
+    alt: 'Ivan y Emma sentados en el pasto bajo la Torre Eiffel iluminada, de noche',
+    posicion: '50% 20%',
+  },
 ];
 
 /** Año que se muestra mientras Ivan no confirma el de una foto (el marcador del lienzo). */

@@ -3,11 +3,13 @@
 // Tableros del lienzo: HistoriaPeliculaOro (celular 390×1042) y HistoriaEscritorio (computadora 1440×900).
 // Estilos en galeria.css; fotos, película y estrellas en galeria.data.js.
 //
-// De noche, como el código de vestimenta. Encabezado → pila de fotos en película dorada (una por año; la del
-// año actual al frente y las anteriores salen volando) → año y pie → línea de años (flechas y puntos) →
+// De noche, como el código de vestimenta. Encabezado → pila de fotos en película dorada (momentos clave en orden
+// cronológico; el actual al frente y los anteriores salen volando) → título del momento y "Lugar · año" →
+// línea de momentos (flechas y puntos) →
 // voluta, cierre, llamado y "Compartir mis fotos" (lleva a la galería de la boda, § 6.9).
 //
-// Sin JS se ve el primer año y la línea de años se oculta (sus botones no harían nada).
+// Sin JS se ve el primer momento y la línea se oculta (sus botones no harían nada).
+// El título va donde el lienzo pone el año (Ivan, 25 nov; Para Cowork): si no cabe en una línea se achica.
 import Screen from '@/components/patterns/Screen.astro';
 import Button from '@/components/ui/Button.astro';
 import Ornament from '@/components/ui/Ornament.astro';
@@ -36,8 +38,10 @@ const zDe = (/** @type {number} */ k, /** @type {number} */ actual) => {
 	return off < 0 ? 30 : 20 - off;
 };
 
-const anioDe = (/** @type {number} */ k) => (fotos[k]?.anio ? String(fotos[k].anio) : ANIO_PENDIENTE);
-const etiquetaDe = (/** @type {number} */ k) => (fotos[k]?.anio ? String(fotos[k].anio) : `Foto ${k + 1} de ${fotos.length}`);
+const tituloDe = (/** @type {number} */ k) => fotos[k]?.titulo ?? (fotos[k]?.anio ? String(fotos[k].anio) : ANIO_PENDIENTE);
+const pieDe = (/** @type {number} */ k) => [fotos[k]?.pie, fotos[k]?.anio].filter(Boolean).join(' · ');
+const etiquetaDe = (/** @type {number} */ k) =>
+	[fotos[k]?.titulo, fotos[k]?.anio].filter(Boolean).join(', ') || `Foto ${k + 1} de ${fotos.length}`;
 
 /** @param {number[]} estrella */
 const estiloEstrella = ([x, y, s, d, t]) => `--x:${x};--y:${y};--s:${s};--d:${d}s;--t:${t}s`;
@@ -141,11 +145,11 @@ const camara = ['M4 8h3l1.6-2.4h6.8L17 8h3v11H4z', 'M15.4 13a3.4 3.4 0 1 1-6.8 0
 		}
 	</div>
 
-	<p class="galeria__anio" data-galeria-anio aria-live="polite">{anioDe(0)}</p>
-	<p class="galeria__pie" data-galeria-pie>{fotos[0]?.pie ?? ''}</p>
+	<p class="galeria__anio" data-galeria-anio aria-live="polite">{tituloDe(0)}</p>
+	<p class="galeria__pie" data-galeria-pie>{pieDe(0)}</p>
 
 	<div class="galeria__linea" data-galeria-linea>
-		<button type="button" class="galeria__flecha" data-galeria-paso="-1" aria-label="Año anterior">
+		<button type="button" class="galeria__flecha" data-galeria-paso="-1" aria-label="Momento anterior">
 			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"></path></svg>
 		</button>
 		<div class="galeria__riel">
@@ -157,8 +161,8 @@ const camara = ['M4 8h3l1.6-2.4h6.8L17 8h3v11H4z', 'M15.4 13a3.4 3.4 0 1 1-6.8 0
 							type="button"
 							class="galeria__punto"
 							data-galeria-punto={k}
-							data-anio={anioDe(k)}
-							data-pie={fotos[k]?.pie ?? ''}
+							data-anio={tituloDe(k)}
+							data-pie={pieDe(k)}
 							aria-label={etiquetaDe(k)}
 							aria-current={k === 0 ? 'true' : undefined}
 						/>
@@ -166,7 +170,7 @@ const camara = ['M4 8h3l1.6-2.4h6.8L17 8h3v11H4z', 'M15.4 13a3.4 3.4 0 1 1-6.8 0
 				}
 			</div>
 		</div>
-		<button type="button" class="galeria__flecha" data-galeria-paso="1" aria-label="Año siguiente">
+		<button type="button" class="galeria__flecha" data-galeria-paso="1" aria-label="Momento siguiente">
 			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"></path></svg>
 		</button>
 	</div>
@@ -196,6 +200,7 @@ const camara = ['M4 8h3l1.6-2.4h6.8L17 8h3v11H4z', 'M15.4 13a3.4 3.4 0 1 1-6.8 0
 		const punto = puntos[actual];
 		if (anio && punto) {
 			anio.textContent = punto.dataset.anio ?? '';
+			ajustar();
 			// El año aparece de nuevo cada vez que cambia (como en el lienzo).
 			anio.classList.remove('is-cambio');
 			void anio.offsetWidth;
@@ -203,6 +208,16 @@ const camara = ['M4 8h3l1.6-2.4h6.8L17 8h3v11H4z', 'M15.4 13a3.4 3.4 0 1 1-6.8 0
 		}
 		if (pie && punto) pie.textContent = punto.dataset.pie ?? '';
 	}
+
+	/** El título va en una línea: si no cabe, se achica hasta caber (el tamaño del CSS es el máximo). */
+	function ajustar() {
+		if (!anio) return;
+		anio.style.fontSize = '';
+		const sobra = anio.scrollWidth / anio.clientWidth;
+		if (sobra > 1) anio.style.fontSize = `${parseFloat(getComputedStyle(anio).fontSize) / sobra}px`;
+	}
+	document.fonts?.ready.then(ajustar);
+	window.addEventListener('resize', ajustar);
 
 	for (const boton of document.querySelectorAll('[data-galeria-paso]')) {
 		boton.addEventListener('click', () => mostrar(actual + Number(/** @type {HTMLElement} */ (boton).dataset.galeriaPaso)));
