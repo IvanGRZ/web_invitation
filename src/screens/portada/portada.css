@@ -6,6 +6,9 @@
  * para no competir con los estilos internos de cada componente.
  * Textos con piso de legibilidad (max(17px, …)) y botón con objetivo táctil ≥ 44px en pantallas cortas.
  *
+ * Ivan, 25 nov: todo lo de arriba sube 36 px (el medallón a 32) y el gesto se queda en su lugar, más grande, con
+ * "Desliza" a la mitad de la estela (Para Cowork).
+ *
  * Valores exactos del tablero que no son tokens (bitácora 2026-11-10): --candle-from, --medallion-glass-*,
  * --glass-card-*, --portada-nombres*. */
 
@@ -36,12 +39,12 @@
   display: none;
 }
 
-/* ─── Medallón: 240×314 a 68 px del borde ─────────────────────────── */
+/* ─── Medallón: 240×314 a 32 px del borde ─────────────────────────── */
 
 .portada__medallon {
   position: absolute;
   left: calc(75 * var(--u));
-  top: calc(68 * var(--u));
+  top: calc(32 * var(--u));
 }
 
 /* ─── Nombres desfasados: Cormorant 300 a 66 px, margen de 40 px ──── */
@@ -50,7 +53,7 @@
   position: absolute;
   left: calc(40 * var(--u));
   right: calc(40 * var(--u));
-  top: calc(412 * var(--u));
+  top: calc(376 * var(--u));
   display: flex;
   flex-direction: column;
   font-size: calc(66 * var(--u));
@@ -85,13 +88,13 @@
   color: var(--gold);
 }
 
-/* ─── Fecha: cursiva 20/26, a 558 px ──────────────────────────────── */
+/* ─── Fecha: cursiva 20/26, a 522 px ──────────────────────────────── */
 
 .portada__fecha {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(558 * var(--u));
+  top: calc(522 * var(--u));
   font-size: max(17px, calc(20 * var(--u)));
   line-height: 1.3;
   font-style: italic;
@@ -101,13 +104,13 @@
   animation-delay: 2.8s;
 }
 
-/* ─── Cuenta regresiva: tarjeta de vidrio a 604 px, margen de 44 px ── */
+/* ─── Cuenta regresiva: tarjeta de vidrio a 568 px, margen de 44 px ── */
 
 .portada__cuenta {
   position: absolute;
   left: calc(44 * var(--u));
   right: calc(44 * var(--u));
-  top: calc(604 * var(--u));
+  top: calc(568 * var(--u));
   animation-delay: 3.05s;
 }
 
@@ -117,7 +120,7 @@
   padding: calc(12 * var(--u)) calc(14 * var(--u)) calc(10 * var(--u));
 }
 
-/* ─── Botón: 52 px de alto a 700 px, margen de 44 px ──────────────── */
+/* ─── Botón: 52 px de alto a 664 px, margen de 44 px ──────────────── */
 
 .portada__cta {
   --btn-height: max(44px, calc(52 * var(--u)));
@@ -127,13 +130,15 @@
   position: absolute;
   left: calc(44 * var(--u));
   right: calc(44 * var(--u));
-  top: calc(700 * var(--u));
+  top: calc(664 * var(--u));
   animation-delay: 3.3s;
 }
 
 /* ─── Gesto de desplazamiento: a 12 px del borde inferior ─────────── */
 
 .portada__gesto {
+  --cue-delay: 3.3s; /* entra con el botón: quien llega con prisa por confirmar lo ve al mismo tiempo */
+
   position: absolute;
   left: 50%;
   bottom: calc(12 * var(--u));
@@ -159,29 +164,29 @@
 
   .portada__medallon {
     left: calc(600 * var(--u));
-    top: calc(80 * var(--u));
+    top: calc(44 * var(--u));
   }
 
   .portada__nombres {
     left: calc(547 * var(--u));
     right: calc(547 * var(--u));
-    top: calc(436 * var(--u));
+    top: calc(400 * var(--u));
   }
 
   .portada__fecha {
-    top: calc(592 * var(--u));
+    top: calc(556 * var(--u));
   }
 
   .portada__cuenta {
     left: calc(549 * var(--u));
     right: calc(549 * var(--u));
-    top: calc(640 * var(--u));
+    top: calc(604 * var(--u));
   }
 
   .portada__cta {
     left: calc(549 * var(--u));
     right: calc(549 * var(--u));
-    top: calc(748 * var(--u));
+    top: calc(712 * var(--u));
   }
 }
 

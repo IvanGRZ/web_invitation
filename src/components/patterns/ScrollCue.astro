@@ -7,13 +7,15 @@
  * @typedef {Object} Props
  * @property {string} href ancla de la siguiente pantalla
  * @property {string} [label] nombre accesible
+ * @property {string} [texto] palabra que guía ("Desliza"): se prende y se apaga al ritmo de la flecha
  * @property {string} [class]
  */
 
-const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ (Astro.props);
+const { href, label = 'Ver detalles', texto, class: className } = /** @type {Props} */ (Astro.props);
 ---
 
-<a href={href} aria-label={label} class:list={['scroll-cue', className]}>
+<a href={href} aria-label={label} class:list={['scroll-cue', texto && 'scroll-cue--texto', className]}>
+	{texto && <span class="scroll-cue__texto" aria-hidden="true">{texto}</span>}
 	<span class="scroll-cue__line" aria-hidden="true"><span class="scroll-cue__trail"></span></span>
 	<svg class="scroll-cue__chevron" viewBox="0 0 24 24" aria-hidden="true">
 		<path d="M5 9l7 7 7-7"></path>
@@ -42,11 +44,63 @@ const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ 
 		border-radius: var(--radius-pill);
 	}
 
+	/* Con palabra (Ivan, 25 nov): una estela larga con la palabra en su mitad y la flecha al final. La luz cae por la
+	   línea (que nace difuminada), pasa por detrás de la palabra (la línea tiene un hueco ahí) y la palabra se
+	   enciende cuando la cruza.
+	   La flecha sube sobre el aire vacío de su propio dibujo (el trazo ocupa sólo el centro de su caja). */
+	.scroll-cue--texto {
+		--cue-linea: 64;
+		--cue-hueco: 30;
+
+		position: relative;
+		width: max(44px, calc(120 * var(--uu)));
+		height: auto;
+	}
+
+	/* Estela más gruesa y un poco más visible que la del gesto solo (Ivan, 25 nov: "quiero ver algo"). */
+	.scroll-cue--texto .scroll-cue__line,
+	.scroll-cue--texto .scroll-cue__trail {
+		width: 2px;
+	}
+
+	.scroll-cue--texto .scroll-cue__line {
+		--h: calc(var(--cue-hueco) * var(--uu) / 2);
+
+		background: rgba(201, 168, 110, 0.24);
+
+		-webkit-mask: linear-gradient(transparent, #000 calc(12 * var(--uu)) calc(50% - var(--h)), transparent 0 calc(50% + var(--h)), #000 0);
+		mask: linear-gradient(transparent, #000 calc(12 * var(--uu)) calc(50% - var(--h)), transparent 0 calc(50% + var(--h)), #000 0);
+	}
+
+	.scroll-cue__texto {
+		position: absolute;
+		left: 50%;
+		top: calc(var(--cue-linea) * var(--uu) / 2);
+		transform: translate(-50%, -50%);
+		padding-left: 0.32em; /* compensa el espaciado de la última letra: la palabra queda centrada en la línea */
+		font-family: var(--font-sans);
+		font-size: max(11px, calc(12 * var(--uu)));
+		font-weight: 500;
+		line-height: 1;
+		letter-spacing: 0.32em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		color: var(--gold-deep);
+		opacity: 0.6; /* atenuada, sigue con contraste de 4.8:1 sobre la noche */
+		animation: cue-pulso 2.4s ease-in-out var(--cue-delay, 3.6s) infinite;
+	}
+
+	.scroll-cue--texto .scroll-cue__chevron {
+		width: calc(36 * var(--uu));
+		height: calc(36 * var(--uu));
+		margin-top: calc(-13 * var(--uu));
+	}
+
 	.scroll-cue__line {
 		position: relative;
 		display: block;
 		width: 1px;
-		height: calc(32 * var(--uu));
+		height: calc(var(--cue-linea, 32) * var(--uu));
 		overflow: hidden;
 		background: rgba(201, 168, 110, 0.16);
 	}
@@ -85,7 +139,19 @@ const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ 
 		}
 		70%,
 		100% {
-			transform: translateY(calc(32 * var(--uu)));
+			transform: translateY(calc(var(--cue-linea, 32) * var(--uu)));
+		}
+	}
+
+	/* La palabra se enciende cuando la luz pasa por detrás de ella (a la mitad de su caída) y se vuelve a atenuar. */
+	@keyframes cue-pulso {
+		0%,
+		70%,
+		100% {
+			opacity: 0.6;
+		}
+		35% {
+			opacity: 1;
 		}
 	}
 
@@ -111,8 +177,13 @@ const { href, label = 'Ver detalles', class: className } = /** @type {Props} */ 
 			transform: none;
 		}
 
-		.scroll-cue__chevron {
+		.scroll-cue__chevron,
+		.scroll-cue__texto {
 			animation: none;
+		}
+
+		.scroll-cue__texto {
+			opacity: 1;
 		}
 	}
 </style>
