@@ -11,7 +11,10 @@
 
 .galeria {
   --bw: 390;
-  --bh: 1042;
+  /* El lienzo mide 1042; se escala como si midiera 1066 (24 de aire abajo) para que "Compartir mis fotos" quede a
+   * 40 del borde, como "Agregar al calendario" en la ceremonia (Ivan, 25 nov: parecía una pantalla más grande).
+   * El contenido no se mueve: todo va desde arriba y sólo se achica un 2 %. Para Cowork. */
+  --bh: 1066;
 
   --gl-y0: calc(50% - var(--bh) / 2 * var(--u));
 
