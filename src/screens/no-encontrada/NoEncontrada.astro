@@ -6,6 +6,8 @@
 // De noche, con el medallón chico, los nombres y "No encontramos esta invitación". Sirve para un
 // `/i/<codigo>` inexistente y para cualquier ruta que no exista. "Escribir mi código" lleva al candado
 // de la confirmación (§ 6.7); "Ver la invitación", a la invitación general. Al pie, la ayuda por WhatsApp.
+import { WHATSAPP_NOVIOS } from 'astro:env/server';
+import { enlaceWhatsapp } from '@/lib/whatsapp.js';
 import Screen from '@/components/patterns/Screen.astro';
 import CandleBackdrop from '@/components/patterns/CandleBackdrop.astro';
 import Medallion from '@/components/patterns/Medallion.astro';
@@ -25,7 +27,7 @@ import './no-encontrada.css';
 
 const { id, slug, titulo, codigo, invitacion } = /** @type {Props} */ (Astro.props);
 const { el, ella } = evento.novios;
-const whatsapp = `https://wa.me/${evento.whatsapp ?? ''}`;
+const whatsapp = enlaceWhatsapp(WHATSAPP_NOVIOS);
 ---
 
 <Screen id={id} slug={slug} titulo={titulo} theme="noche" class="no-encontrada" aria-labelledby="no-encontrada-titulo">

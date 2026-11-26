@@ -306,7 +306,6 @@ Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/
 
 **Datos que faltan de Ivan:**
 
-- **WhatsApp de los novios** (`whatsapp` en `config/evento.js`) para "Pídenoslo / Escríbenos por WhatsApp" de la confirmación; mientras falte, el enlace abre WhatsApp sin destinatario.
 
 - **Dominio para el QR.** Es urgente: tiene que existir antes de imprimir, y la imprenta es a finales de noviembre. También va impreso en el reverso ("o entra a [dominio] con tu código") y en el mensaje de WhatsApp.
 - Los teléfonos de WhatsApp de las familias con invitación digital, y cuáles familias reciben impresa y cuáles digital.

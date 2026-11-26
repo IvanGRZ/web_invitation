@@ -46,9 +46,6 @@ const EventoSchema = z.object({
   /** Galería de la boda (docs/pantallas.md § 6.9): se abre al empezar la ceremonia y deja de recibir fotos
    *  al mediodía siguiente (Ivan, 20 nov). Las historias se siguen viendo después del cierre. */
   galeriaBoda: z.object({ apertura: instante, cierre: instante }),
-  /** WhatsApp de los novios en formato internacional (52…), para "Pídenoslo / Escríbenos por WhatsApp".
-   *  Pendiente de Ivan: mientras no esté, el enlace abre WhatsApp sin destinatario. */
-  whatsapp: z.string().regex(/^52\d{10}$/).optional(),
 }).refine(
   (e) =>
     e.itinerario[0].inicio === e.recepcion.inicio &&

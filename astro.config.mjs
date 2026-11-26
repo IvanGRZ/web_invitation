@@ -27,7 +27,9 @@ export default defineConfig({
   env: {
     schema: {
       SUPABASE_URL: envField.string({ context: 'server', access: 'secret', url: true }),
-      SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: 'server', access: 'secret' })
+      SUPABASE_SERVICE_ROLE_KEY: envField.string({ context: 'server', access: 'secret' }),
+      // WhatsApp de los novios (52 + 10 dígitos): se muestra en la página, pero no se deja en el repo (es público).
+      WHATSAPP_NOVIOS: envField.string({ context: 'server', access: 'public', optional: true })
     },
     validateSecrets: true
   },

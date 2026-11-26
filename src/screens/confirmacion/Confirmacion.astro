@@ -12,6 +12,8 @@
 //   cerrada   pasó la fecha límite: sin formulario
 // Sin JS, la isla se oculta y queda una sola página con el mismo formulario (o el campo del código), que envía
 // la misma Action por POST a la página; ésta vuelve a pintarse con el resultado (inválido, error o gracias).
+import { WHATSAPP_NOVIOS } from 'astro:env/server';
+import { enlaceWhatsapp } from '@/lib/whatsapp.js';
 import Screen from '@/components/patterns/Screen.astro';
 import Button from '@/components/ui/Button.astro';
 import RsvpForm from './RsvpForm.jsx';
@@ -80,7 +82,7 @@ const novios = {
 	ella: evento.novios.ella.nombre,
 	fecha: fechaLarga(evento.ceremonia.inicio, { mayuscula: true }),
 };
-const whatsapp = `https://wa.me/${evento.whatsapp ?? ''}`;
+const whatsapp = enlaceWhatsapp(WHATSAPP_NOVIOS);
 const recibida = respuesta ? fechaLarga(respuesta.recibida, { diaSemana: false }) : '';
 
 const props = {
