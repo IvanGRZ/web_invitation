@@ -12,6 +12,7 @@
 //   /prueba/error/confirmar           el paso del mensaje con el error al guardar
 //   /prueba/regreso[-no]/confirmar    la familia ya respondió (que sí / que no)
 //   /prueba/regreso-12/confirmar      12 personas, ya respondieron (van 10)
+//   /prueba/regreso[-12]-largo/...    ya respondieron con un mensaje largo (se corta a tres renglones)
 //   /prueba/cerrada[-sin]/confirmar   pasó la fecha límite (con su respuesta / sin respuesta)
 //   /prueba/cerrada-12/confirmar      12 personas, pasó la fecha límite (van 10)
 import Recorrido from '@/layouts/Recorrido.astro';
@@ -22,6 +23,8 @@ export function getStaticPaths() {
 	if (import.meta.env.PROD) return [];
 	const { respuesta, codigoValido, codigoInvalido, personas, etiquetaLarga } = muestra;
 	const ejemplo = (lugares) => ({ lugares, personas: personas.ejemplo.slice(0, lugares) });
+	// Un mensaje largo (hasta MENSAJE_MAX) para revisar que se corta con "…" sin empujar el botón.
+	const mensajeLargo = 'Queremos felicitarlos y contarles lo mucho que nos alegra que estén consumando su amor en esta nueva etapa de su vida, una etapa donde deberán aprender a coexistir juntos, a apoyarse, comprenderse y lo más importante a amarse. De todo corazón les deseamos lo mejor en esta aventura.';
 	const pasos = (lugares) => ({ estado: 'pasos', ...ejemplo(lugares) });
 	// Con respuesta: van todas menos las que se indican (por su posición, como el lienzo).
 	const respondio = (lugares, faltan) => {
@@ -45,6 +48,8 @@ export function getStaticPaths() {
 		regreso: { estado: 'regreso', ...ejemplo(4), respuesta: respondio(4, [3]) },
 		'regreso-no': { estado: 'regreso', ...ejemplo(4), respuesta: { ...respuesta, asiste: false, invitados: 0, asistentes: [], mensaje: undefined } },
 		'regreso-12': { estado: 'regreso', ...ejemplo(12), respuesta: respondio(12, [1, 10]) },
+		'regreso-largo': { estado: 'regreso', ...ejemplo(2), respuesta: { ...respondio(2, []), mensaje: mensajeLargo } },
+		'regreso-12-largo': { estado: 'regreso', ...ejemplo(12), respuesta: { ...respondio(12, [1, 10]), mensaje: mensajeLargo } },
 		cerrada: { estado: 'cerrada', ...ejemplo(4), respuesta: respondio(4, [3]) },
 		'cerrada-sin': { estado: 'cerrada', ...ejemplo(4), respuesta: null },
 		'cerrada-12': { estado: 'cerrada', ...ejemplo(12), respuesta: respondio(12, [1, 10]) },

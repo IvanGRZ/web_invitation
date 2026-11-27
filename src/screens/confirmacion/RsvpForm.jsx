@@ -295,6 +295,33 @@ export default function RsvpForm({
     yaMontado.current = true;
   }, [vista]);
 
+  // Regreso en celular: el mensaje que dejaron se corta con "…" (hasta tres renglones, confirmacion.css) y,
+  // si aun así el cuerpo no cabe arriba del botón (pantallas cortas, 12 sillas), pierde renglones hasta que
+  // quepa o, si ni uno cabe, se oculta. En computadora el cuerpo es `display: contents` y se quedan los tres renglones.
+  const cita = useRef(/** @type {HTMLParagraphElement | null} */ (null));
+  useEffect(() => {
+    const p = cita.current;
+    const cuerpo = p?.closest('.confirmacion__cuerpo');
+    if (!p || !(cuerpo instanceof HTMLElement)) return;
+    const ajustar = () => {
+      p.style.removeProperty('--cita-lineas');
+      p.hidden = false;
+      if (getComputedStyle(cuerpo).display === 'contents') return;
+      const sobra = () => cuerpo.scrollHeight > cuerpo.clientHeight + 1;
+      for (let n = 2; n >= 1 && sobra(); n--) p.style.setProperty('--cita-lineas', String(n));
+      // Ni un renglón cabe (12 sillas en un celular corto): antes que encimarse con el botón, no se muestra.
+      if (sobra()) p.hidden = true;
+    };
+    ajustar();
+    let vivo = true;
+    document.fonts.ready.then(() => vivo && ajustar()).catch(() => {});
+    window.addEventListener('resize', ajustar);
+    return () => {
+      vivo = false;
+      window.removeEventListener('resize', ajustar);
+    };
+  }, [vista, medidas]);
+
   /** @param {Vista} siguiente */
   const ir = (siguiente) => {
     setError(false);
@@ -725,7 +752,7 @@ export default function RsvpForm({
             ) : (
               <p className="confirmacion__etiqueta-pase confirmacion__etiqueta-regreso">Nos avisaron que no podrán acompañarnos</p>
             )}
-            {respuesta?.mensaje && <p className="confirmacion__cita">“{respuesta.mensaje}”</p>}
+            {respuesta?.mensaje && <p ref={cita} className="confirmacion__cita">“{respuesta.mensaje}”</p>}
           </div>
           {espacio}
         </>

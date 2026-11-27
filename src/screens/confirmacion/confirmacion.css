@@ -963,6 +963,18 @@
   font-weight: 400;
   color: var(--ink-muted);
   text-wrap: balance;
+  /* Un mensaje largo no empuja el botón ni el pie: se corta a tres renglones con "…"; en celular
+     RsvpForm.jsx baja --cita-lineas si aun así no cabe. */
+  flex: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--cita-lineas, 3);
+  line-clamp: var(--cita-lineas, 3);
+  overflow: hidden;
+}
+
+.confirmacion__cita[hidden] {
+  display: none;
 }
 
 .confirmacion__hoja-grande {
