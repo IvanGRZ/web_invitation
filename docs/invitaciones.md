@@ -3,11 +3,11 @@
 Flujo de enlaces personales, candado, mensajes de WhatsApp y herramientas para no cruzar enlaces. Se usa al construir `/i/[codigo]`, la confirmación y los scripts de `scripts/`.
 
 
-**Un solo mecanismo para las dos:** cada familia tiene su código y su enlace personal `https://<dominio>/i/<codigo>`. El QR sólo es una forma de entregar ese enlace.
+**Un solo mecanismo para las dos:** cada familia tiene su código y su enlace personal `https://ivanyemma.love/i/<codigo>`. El QR sólo es una forma de entregar ese enlace.
 
 | | Impresa | Digital |
 |---|---|---|
-| Cómo le llega | Tarjeta con QR y, bajo el QR, el código impreso (`K7M2-PQ9X`) con *"o entra a [dominio] con tu código"* | Mensaje de WhatsApp con su enlace personal y, al final, su código como respaldo |
+| Cómo le llega | Tarjeta con QR y, bajo el QR, el código impreso (`K7M2-PQ9X`) con *"o entra a ivanyemma.love con tu código"* | Mensaje de WhatsApp con su enlace personal y, al final, su código como respaldo |
 | A dónde la lleva | A su invitación personalizada (portada con su pase y "Confirmar asistencia" a la vista) | Lo mismo; al final del recorrido, el sobre del cierre la lleva a su confirmación |
 
 - **Enlace general (`/`)** = red de seguridad para quien lo recibe reenviado o pierde el suyo. Ve la invitación completa, y al intentar confirmar le aparece **el candado**: escribe su código y, si es válido, entra a su invitación personalizada. Debajo, *"¿No lo tienes? Pídenoslo por WhatsApp"*. La pantalla está por diseñar en Cowork.
@@ -16,7 +16,7 @@ Flujo de enlaces personales, candado, mensajes de WhatsApp y herramientas para n
   - **Nunca** busca por nombre o apellido: revelaría quién está invitado y con cuántos lugares.
 - **Vista previa de WhatsApp:** cada `/i/<codigo>` sirve sus propias meta OG: título "Ivan & Emma · Invitación para la Familia García", descripción breve e imagen de la portada. Va aunque la página lleve `noindex`.
 - **Mensaje de WhatsApp** (Ivan lo manda desde su teléfono). El enlace va completo con `https://`, para que sea tocable y muestre la vista previa:
-  > ¡Hola, familia García! Hay días que se esperan toda una vida, y el nuestro ya tiene fecha: el sábado 20 de febrero de 2027. No lo imaginamos sin ustedes. Aquí les espera su invitación: https://[dominio]/i/K7M2PQ9X
+  > ¡Hola, familia García! Hay días que se esperan toda una vida, y el nuestro ya tiene fecha: el sábado 20 de febrero de 2027. No lo imaginamos sin ustedes. Aquí les espera su invitación: https://ivanyemma.love/i/K7M2PQ9X
   >
   > Nos hará muy felices que nos confirmen su asistencia antes del 15 de enero. Si en algún momento les pide un código, es K7M2-PQ9X.
   >

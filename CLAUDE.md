@@ -65,9 +65,11 @@ Los links de claude.ai son de la cuenta nueva de Ivan (migrados el 22 nov 2026; 
 | Edad | Evento exclusivo para mayores de 18 años (sin niños) |
 | Itinerario de la fiesta | 19:30 Cóctel de bienvenida · 21:20 Entrada de los novios · 21:30 Banquete · 22:30 El vals · 22:55 Abrimos la pista · 02:00 Fin de la fiesta (sólo horas de inicio; confirmado por Ivan) |
 | Fecha límite para confirmar | Viernes 15 de enero de 2027 (5 semanas antes; antes era el 23 de enero, Ivan lo cambió el 25 nov) |
-| Envío de invitaciones (impresas + enlace) | 7 al 12 de diciembre de 2026 |
+| Envío de invitaciones digitales | A partir del jueves 26 de noviembre de 2026 (Ivan, 26 nov) |
+| Envío de invitaciones impresas | La imprenta las entrega el jueves 3 de diciembre; el envío empieza el sábado 5 de diciembre de 2026 (Ivan, 26 nov; antes era del 7 al 12 de diciembre) |
 | Pases | Cada invitación es para una familia con un número fijo de lugares |
 | Zona horaria | America/Mexico_City (UTC-6) |
+| Dominio | `ivanyemma.love` (publicado el 26 nov de 2026) |
 
 **Pendientes de Ivan:** hora exacta de la recepción (si se quiere mostrar), fotos de pareja/preboda, dominio, lista de invitados.
 
@@ -167,7 +169,7 @@ Reglas que aplican a todas: la portada **no se personaliza** (el pase sólo apar
 | `/i/[codigo]` | Invitación personalizada de una familia: la misma invitación, **sin personalizar la portada** (Ivan, 19 nov); el pase ("Familia X · Válido para N personas") aparece sólo en la confirmación. El `RsvpForm` (quién asiste y un mensaje opcional) y la pantalla de gracias viven en la **pantalla de confirmación aparte** (marfil), a la que llevan el botón de la portada y el del cierre (se puede cambiar la respuesta hasta la fecha límite). Cómo implementarla (sub-ruta bajo demanda tipo `/i/[codigo]/confirmar` u otra opción) lo decide Claude Code; debe seguir funcionando sin JS. Renderizado bajo demanda (SSR); el resto, estático. |
 | `/galeria-de-la-boda` (y `/historias`) | Galería de la boda (§ 6.9), pantallas aparte de noche: subir fotos o, según la hora (`evento.galeriaBoda`), el rollo sin revelar / completo; y las historias. **Bajo demanda** (`prerender = false`, `private, no-store`): el estado depende de la hora de la visita. Las historias sin fotos llevan a subir. La personalizada (`/i/<codigo>/galeria-de-la-boda`) llega con el backend. |
 
-El QR impreso de cada familia apunta a `https://<dominio>/i/<codigo>`.
+El QR impreso de cada familia apunta a `https://ivanyemma.love/i/<codigo>`.
 
 `/i/[codigo]`: valida el formato del código con zod antes de consultar; si no existe → `return Astro.rewrite('/404')` (diseño en la sección 6.8); headers `Cache-Control: private, no-store` y `X-Robots-Tag: noindex` (nunca en caché de CDN ni indexada; no usar `cacheOnDemandPages`). **Excepción:** a las vistas previas de los chats (`esVistaPreviaDeEnlace`: WhatsApp, Facebook/iMessage, Telegram…; nunca buscadores) no se les manda `noindex` (ni header ni `<meta>`): con él WhatsApp no muestra la imagen. Página completa bajo demanda, **no** server islands (el código va en la ruta, el pase no debe parpadear y el formulario sin JS necesita página bajo demanda).
 
@@ -270,7 +272,7 @@ Una fila **por persona**; la invitación (lo que tiene código, enlace y QR) agr
 - Ivan puede ver/exportar confirmaciones desde el editor de tablas de Supabase; un `/admin` es opcional.
 
 ### Invitaciones impresas y digitales
-Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/i/<codigo>` (el QR sólo lo entrega). `/` sin código pide el código (el candado; nunca buscar por nombre). Flujo completo, mensaje de WhatsApp, registro de aperturas y tareas de `scripts/` en **`docs/invitaciones.md`**.
+Un solo mecanismo: cada familia tiene su código y su enlace `https://ivanyemma.love/i/<codigo>` (el QR sólo lo entrega). `/` sin código pide el código (el candado; nunca buscar por nombre). Flujo completo, mensaje de WhatsApp, registro de aperturas y tareas de `scripts/` en **`docs/invitaciones.md`**.
 
 ### Seguridad
 - `security.checkOrigin` (activo por defecto) se mantiene.
@@ -299,26 +301,22 @@ Un solo mecanismo: cada familia tiene su código y su enlace `https://<dominio>/
 
 ## 8. Estado y pendientes
 
-**Hecho:** proyecto Astro (JS + `checkJs`, React, Netlify), fuentes y tokens; base de la arquitectura; **portada**, **bienvenida**, **ceremonia y recepción**, **itinerario de la fiesta**, **código de vestimenta**, **galería**, **cierre**, la **pantalla de confirmación** con sus estados y la **galería de la boda** (subir con sus mensajes, el rollo antes/cerrada e historias) (celular y computadora, verificadas al píxel contra el lienzo; la ceremonia con `/calendario.ics`; la galería de la boda todavía sin backend); el **backend de la confirmación** (Supabase, Actions `rsvp` y `entrar`, `/i/[codigo]` con su 404, registro de aperturas y límite de intentos del candado; Vitest en `src/server/`); recorrido de pantallas con direcciones por pantalla e historial; herramientas de revisión visual en `tools/qa/`; **envío por WhatsApp** (`npm run whatsapp -- <n>`: lista local con enlaces wa.me y "Marcar enviada" en `invitations.sent_at`; ver `docs/invitaciones.md`, tareas 2, 3 y 6).
+**Hecho:** proyecto Astro (JS + `checkJs`, React, Netlify), fuentes y tokens; base de la arquitectura; **portada**, **bienvenida**, **ceremonia y recepción**, **itinerario de la fiesta**, **código de vestimenta**, **galería**, **cierre**, la **pantalla de confirmación** con sus estados y la **galería de la boda** (subir con sus mensajes, el rollo antes/cerrada e historias) (celular y computadora, verificadas al píxel contra el lienzo; la ceremonia con `/calendario.ics`; la galería de la boda todavía sin backend); el **backend de la confirmación** (Supabase, Actions `rsvp` y `entrar`, `/i/[codigo]` con su 404, registro de aperturas y límite de intentos del candado; Vitest en `src/server/`); recorrido de pantallas con direcciones por pantalla e historial; herramientas de revisión visual en `tools/qa/`; **envío por WhatsApp** (`npm run whatsapp -- <n>`: lista local con enlaces wa.me y "Marcar enviada" en `invitations.sent_at`; ver `docs/invitaciones.md`, tareas 2, 3 y 6); **la web publicada y funcionando en producción** (Ivan, 26 nov), y el envío de las digitales empezado ese mismo día.
 
-**Siguiente paso:** publicar (subir a GitHub, quitar el login de Netlify, deploy con el dominio) y probar en producción. Después, con el mismo Supabase, la galería de la boda: Supabase Storage para `subir()` (`galeria-boda/subida.js`) y `fotosCompartidas()` (`galeria-boda/galeria-boda.js`), validación de hora, tipo y tamaño en el servidor, y `/i/[codigo]/galeria-de-la-boda` ("Compartiendo como"). Una sesión por pantalla. En la galería sólo falta poner las fotos en `src/screens/galeria/galeria.data.js` cuando Ivan las mande.
+**Siguiente paso:** con el mismo Supabase, la galería de la boda: Supabase Storage para `subir()` (`galeria-boda/subida.js`) y `fotosCompartidas()` (`galeria-boda/galeria-boda.js`), validación de hora, tipo y tamaño en el servidor, y `/i/[codigo]/galeria-de-la-boda` ("Compartiendo como"). Una sesión por pantalla.
 
 ### Pendientes (al 18 de noviembre)
 
 **Datos que faltan de Ivan:**
 
 
-- **Dominio para el QR.** Es urgente: tiene que existir antes de imprimir, y la imprenta es a finales de noviembre. También va impreso en el reverso ("o entra a [dominio] con tu código") y en el mensaje de WhatsApp.
+- **Dominio:** `ivanyemma.love`, ya publicado (26 nov). Las impresas ya están en la imprenta con sus QR, códigos y el reverso completo; las entrega el 3 de diciembre.
 - Los teléfonos de WhatsApp de las familias con invitación digital, y cuáles familias reciben impresa y cuáles digital.
-- Las medidas reales de la solapa del sobre, para ajustar el forro (`design/impresion/sobre/LEEME.txt`).
-- Si la tarjeta impresa cambia "Recepción a continuación" por "19:30".
-- Galería: tiene todas sus fotos (Ivan, 25 nov). Faltan en alta definición las de París y del mirador de Toledo (735 px).
 
 **Diseño pendiente en Cowork:**
 
 
 - **Mesa de regalos:** sin decidir.
-- **Reverso impreso:** agregar bajo el QR el código (`K7M2-PQ9X`) y *"o entra a [dominio] con tu código"*. Hay que cerrarlo antes de la imprenta.
 - **Para Cowork** (ver la bitácora del 10 nov): valores de la portada que no existen como token.
 
 ---
